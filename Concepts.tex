@@ -67,23 +67,44 @@ automated in open-source toolsuite \noun{Workcraft}.
 
 \section{Introduction}
 
-Analogue and mixed-signal circuits become more tightly integrated with
-digital systems, in particular in mobile and autonomous applications,
-such as wearable consumer electronics and self-powered Internet-of-Things
-nodes, where it is essential to have intelligent timing control and power
-regulation~\cite{7287733}\cite{talbot2016holistic}\cite{6241632}.
-An on-chip power management system is an illustrative example: it relies
-on analogue circuitry for power regulation and conversion, and its behaviour
-is characterised by many operating modes with complex interplay and
-high-level decision logic that is digitally controlled.
-Asynchronous circuits are event-driven, i.e. they react to changes
-in a system at the rate they occur~\cite{sparso2001principles}.
-This makes them particularly useful for interacting with analogue world,
-where the ability to quickly respond to non-digital input, e.g.
-dynamically changing loads across the chip, is essential for reliable
-operation and efficiency~\cite{2008_audy_isscc_tutorial}.
+%Analogue and mixed-signal circuits become more tightly integrated with
+%digital systems, in particular in mobile and autonomous applications,
+%such as wearable consumer electronics and self-powered Internet-of-Things
+%nodes, where it is essential to have intelligent timing control and power
+%regulation~\cite{7287733}\cite{talbot2016holistic}\cite{6241632}.
+%An on-chip power management system is an illustrative example: it relies
+%on analogue circuitry for power regulation and conversion, and its behaviour
+%is characterised by many operating modes with complex interplay and
+%high-level decision logic that is digitally controlled.
+%Asynchronous circuits are event-driven, i.e. they react to changes
+%in a system at the rate they occur~\cite{sparso2001principles}.
+%This makes them particularly useful for interacting with analogue world,
+%where the ability to quickly respond to non-digital input, e.g.
+%dynamically changing loads across the chip, is essential for reliable
+%operation and efficiency~\cite{2008_audy_isscc_tutorial}.
 
-Signal Transition Graphs~(STGs)~\cite{Chu_1987_phd}\cite{Rosenblum_1985_tpn}
+As discussed in~\cite{2015_Beaumont_MEMOCODE}, concepts are a useful language for specifying
+the behaviours of asynchronous circuits, in the preferred form of the user. This can be as low-level 
+signal-level concepts, or higher-level gate- or protocol-level concepts. It also allows the definition of 
+their own concepts, which can be reused within the same or any other specification that they wish
+to increase the speed of designing a system, and future systems. 
+
+With concepts, we aim to solve the problems that can arise from the more commonly used
+monolithic approach, where a user must design each system in the form of an STG from a blank page. 
+The scalability of this is poor: as the system grows in complexity its monolithic specification becomes 
+challenging to comprehend and debug. The problem becomes particularly severe when designing 
+multi-mode systems, such as power regulators, where capturing all aspects of system behaviour in a
+consistent specification is a major design challenge~\cite{2014_sokolov_ftfc}\cite{sokolov2015design}. 
+Moreover, the STG models of components and  operating modes are difficult to reuse when designing 
+other specifications, and thus each new design must be built from the ground up. This is particularly 
+undesirable for industry, as this increases the design time of each design greatly. 
+
+We have also displayed a design flow with the example of a buck controller, where a specification is 
+split into \textit{scenarios}, each representing a different operational mode of the system. 
+Each one is composed of concepts, and many of these concepts can be reused between 
+scenarios.
+
+STGs~\cite{Chu_1987_phd}\cite{Rosenblum_1985_tpn}
 are commonly used for the specification,
 verification and synthesis of asynchronous control circuits as they are
 supported by multiple EDA tools, such as \noun{Petrify}~\cite{Cortadella},
@@ -94,40 +115,43 @@ These tools take an STG specification of a complete controller and can
 formally verify its correctness, as well as synthesise an asynchronous
 circuit implementation that is \emph{speed-independent}, i.e. guaranteed
 to work correctly regardless of component delays~\cite{Muller_1959_ts}.
-Such a monolithic approach to designing asynchronous circuits has
-poor scalability: as the system grows in complexity its monolithic
-specification becomes challenging to comprehend and debug. The problem
-becomes particularly severe when designing multi-mode systems, such as
-power regulators, where capturing all aspects of system behaviour in a
-consistent specification is a major design
-challenge~\cite{2014_sokolov_ftfc}\cite{sokolov2015design}.
-The STG models of components and operating modes are difficult to reuse
-when designing other specifications, and thus each new design must be built
-from the ground up. This further adds to the design time, hence making
-asynchronous circuits costly for use in industry.
 
-In this paper we address this issue by proposing a new method for design
-of asynchronous circuits based on \emph{behavioural concepts}.
-The method splits a specification into several parts corresponding
-to operational modes of the circuit (\emph{scenarios}). The features,
-constraints and requirements of each scenario (\emph{concepts}),
-are described in a formal notation, which we implemented as a domain
-specific language embedded in Haskell~\cite{1996_hudak_dsl}. Concepts can
-be defined at several levels; specifically, we give examples of signal-,
-gate- and protocol-level concepts. It is possible to compose basic concepts
-into more complex ones, thus supporting the design reuse at the level of system
-specification.
+Concepts are not supported by these tools, and rather than reinvent the wheel by authoring tools
+to verify and synthesize concepts directly, we can \emph{translate} concepts to STGs, for use with 
+these existing tools. Previously, we have introduced a prototype algorithm for translating concepts
+to STGs. However, this version would not allow for some important features of circuits to be
+translated. 
+
+In this paper we display all concept types necessary for a complete specification, and some 
+example concept specifications. These will display the possibilities of concepts, as well as the 
+problems with the prototype translation algorithm, namely \emph{OR-causality}, which is 
+much more complex than the AND-causality which is standard already within concepts. 
+This will lead us to a new translation algorithm, which has been implemented as a tool, 
+along with the domain specific language~\cite{2016_concepts_github} embedded in 
+Haskell~\cite{1996_hudak_dsl}, and integrated into 
+\noun{Workcraft}~\cite{Workcraft_website}, an open-source EDA tool which also 
+features some verification and synthesis tools for STGs. 
+
+%The method splits a specification into several parts corresponding
+%to operational modes of the circuit (\emph{scenarios}). The features,
+%constraints and requirements of each scenario (\emph{concepts}),
+%are described in a formal notation, which we implemented as a domain
+%specific language embedded in Haskell~\cite{1996_hudak_dsl}. Concepts can
+%be defined at several levels; specifically, we give examples of signal-,
+%gate- and protocol-level concepts. It is possible to compose basic concepts
+%into more complex ones, thus supporting the design reuse at the level of system
+%specification.
 %Commented out as I'm not sure we are actually talking about this in the paper:
 %Scenarios of reconfigurable systems~\cite{microadapt}
 %can also be parameterised by run-time parameters (e.g., available
 %energy budget) or design-time ones (e.g., the number of processing
 %cores in a Network-on-Chip network), therefore concepts should also
 %support parameterisation.
-Concepts can be automatically translated into equivalent STGs and
-formally verified using standard tools, e.g. \noun{Workcraft}.
-When all scenarios have been translated to STGs and verified, they can be
-combined to produce a complete specification, and synthesised into an
-asynchronous circuit implementation targeting a chosen technology library.
+%Concepts can be automatically translated into equivalent STGs and
+%formally verified using standard tools, e.g. \noun{Workcraft}.
+%When all scenarios have been translated to STGs and verified, they can be
+%combined to produce a complete specification, and synthesised into an
+%asynchronous circuit implementation targeting a chosen technology library.
 %Commented out, as this is probably too detailed for the intro.
 %This step will also be automated,
 %and will offer \emph{templates} for common scenario ordering requirements,
@@ -135,21 +159,27 @@ asynchronous circuit implementation targeting a chosen technology library.
 
 Our contributions are as follows:
 \begin{itemize}
-  \item We introduce asynchronous concepts as a specification
-  language in Section~\ref{sec:Concepts} and compare it to STGs in
-  Section~\ref{sec:Circuit-specification-with}.
-  \item We present an algorithm for translating concepts to STGs
-  and integrate it into our open-source software toolsuite \noun{Workcraft},
-  Section~\ref{sec:interop-with-stg}.
-  \item We demonstrate the proposed design method on a case study of an
-  asynchronous power regulator, Section~\ref{sec:case-study}.
+%  \item We recap asynchronous concepts as a specification
+%  language in Section~\ref{sec:Concepts}.
+  \item We detail some necessary concepts, required for an accurate 
+  translation in Section~\ref{sec:concept_types}
+  \item We introduce some new gate examples and their specifications in
+  Section~\ref{sec:Examples}, presenting what can be acheived with
+  concepts, and how OR-causality becomes necessary in specifications.
+  \item We present the implemented algorithm for translating concepts to STGs
+  including OR-causality in Section~\ref{sec:algorithm}.
+%  \item We display the design flow with a small example in our open-source 
+%  software toolsuite \noun{Workcraft}, Section~\ref{sec:interop-with-stg}.
 \end{itemize}
 
 \noindent
-We start with a motivational example in Section~\ref{sec:Motivating Example},
-review related work
-in Section~\ref{sec:related-work}, and discuss future research in
-Section~\ref{sec:conclusions}.
+We start with a brief recap of asynchronous concepts as a specification language in
+Section~\ref{sec:Concepts}, and discuss the design flow using the tool within our
+\noun{Workcraft} toolsuite in Section~\ref{sec:interop-with-stg}.
+%We start with a motivational example in Section~\ref{sec:Motivating Example},
+%review related work
+%in Section~\ref{sec:related-work}, and discuss future research in
+%Section~\ref{sec:conclusions}.
 
 %Designing a controller for an analogue circuit using this method can
 %be beneficial. Any of the partial knowledge we have about any casual
@@ -166,15 +196,15 @@ Section~\ref{sec:conclusions}.
 %asynchronous circuits can be used in devices more commonly.
 
 %The presented approach is automated as a Haskell
-tool~\cite{2016_concepts_github}.
+%tool~\cite{2016_concepts_github}.
 %This parses concepts and uses them to produce scenario STGs. We aim to
-implement
+%implement
 %combination of scenarios in the tool in the future.
 %STGs produced, either scenario or full system, are viewed,
 %edited, simulated, verified and synthesised using the open-source
-\noun{Workcraft}
+%\noun{Workcraft}
 %framework~\cite{2007_poliakov_workcraft}, which features back-end tools
-\noun{Petrify}
+%\noun{Petrify}
 %and \noun{Mpsat} to perform these operations.
 
 %In this paper, we use real life industrial
