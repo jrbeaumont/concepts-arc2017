@@ -119,9 +119,9 @@ features some verification and synthesis tools for STGs.
 Our contributions are as follows:
 \begin{itemize}
   \item We detail some necessary concepts, required for an accurate 
-  translation in Section~\ref{sec:concept_types}
+  translation in Section~\ref{sec:trans-concepts}
   \item We introduce some new gate examples and their specifications in
-  Section~\ref{sec:Examples}, presenting what can be acheived with
+  Section~\ref{sec:gate-examples}, presenting what can be acheived with
   concepts, and how OR-causality becomes necessary in specifications.
   \item We present the implemented algorithm for translating concepts to STGs
   including OR-causality in Section~\ref{sec:algorithm}.
@@ -129,7 +129,7 @@ Our contributions are as follows:
 
 \noindent
 We start with a brief recap of asynchronous concepts as a specification language in
-Section~\ref{sec:Concepts}, and discuss the design flow using the tool within our
+Section~\ref{sec:async-concepts}, and discuss the design flow using the tool within our
 \noun{Workcraft} toolsuite in Section~\ref{sec:interop-with-stg}.
 
 %Analogue and mixed-signal circuits become more tightly integrated with
@@ -414,149 +414,151 @@ Section~\ref{sec:Concepts}, and discuss the design flow using the tool within ou
 %%+ STGs mix many different concerns in one single graph -- show how one could
 %split the specification into what we call concepts.
 %%
-\vspace{-2mm}
-\section{Concepts \label{sec:Concepts}}
-
-In this section we formally introduce \emph{concepts} that we propose
-to employ for the specification of asynchronous circuits. Below we
-list (fairly standard) definitions and notational conventions that
-are used throughout the paper.
-
-We use $\mathbb{B}$ to denote the set of Boolean values $\{0,1\}$.
-Given two Boolean functions $f:X\rightarrow\mathbb{B}$ and
-$g:X\rightarrow\mathbb{B}$
-with the same domain $X$, we lift Boolean operators (disjunction~$\vee$,
-conjunction~$\wedge$, implication $\Rightarrow$, etc.) in the usual
-manner: $h=f\vee g$ means $h(x)=f(x)\vee g(x)$ for all $x\in X$,
-etc. Furthermore,~$\mathbf{0}$ and~$\mathbf{1}$ stand for constant
-Boolean functions that discard their input and return $0$
-and $1$, respectively.
-
-A \emph{monoid} is a set $M$ and a binary operation $\diamond : M\times
-M\rightarrow M$
-satisfying two axioms:
-\begin{itemize}
-\item Identity: $e\diamond a=a\diamond e=a$ for any $a\in M$, where $e\in M$
-is the \emph{identity element} of the monoid.
-\item Associativity: $a\diamond(b\diamond c)=(a\diamond b)\diamond c$ for
-all $a,b,c\in M$.
-\end{itemize}
-Monoid is the simplest mathematical structure that captures the notions
-of \emph{emptiness} and \emph{composition}. The concepts introduced
-in this section form \emph{commutative monoids}: they have identity
-elements corresponding to empty specifications, and can be composed
-to build complex concepts from simpler ones. The order of composition
-does not matter, i.e., the concepts commute: $a\diamond b=b\diamond a$
-for all $a,b\in M$.
-
-\vspace{-1mm}
-\subsection{Abstract concepts}
-
-We first describe \emph{abstract concepts} that we use as building
-blocks for developing \emph{domain specific concepts}, such as those
-related to asynchronous circuits (Section~\ref{sub:Concepts-for-asynchronous}).
-
-Abstract concepts are parameterised by finite sets of \emph{states}
-$S$ and \emph{events} $E$. The \emph{initial state concept} captures
-all possible (or \emph{permitted}) initial states of the system. In
-the most general form it is a function
-\[
-\mathsf{initial}:S\rightarrow\mathbb{B}
-\]
-that given a state $s\in S$ returns $1$ if $s$ is an initial state
-and $0$ otherwise. In practice this concept is often realised as
-a membership test of a set of initial states~$I\subseteq S$, i.e.
-$\mathsf{initial}(s)=s\in I$. However, we prefer the functional form
-because it is more abstract and permits other, often more efficient
-realisations. Note that~$\mathbf{0}$ and~$\mathbf{1}$ have natural
-interpretations as initial concepts: they correspond to systems with
-no initial states, and systems where any state can be initial, respectively.
-Initial state concepts form a commutative monoid with the identity
-element~$\mathbf{1}$ and the composition operation~$\wedge$. Intuitively,
-if a system comprises two subsystems then its initial state should
-satisfy constraints imposed by both subsystems, hence the conjunction
-operator.
-
-The \emph{event excitation concept} captures all states wherein a
-given event can occur (or is \emph{excited}). In the most general
-form it is a function
-\[
-\mathsf{excited}:E\times S\rightarrow\mathbb{B}
-\]
-that given an event $e\in E$ and a state $s\in S$ checks whether
-$e$ is excited in $s$. In practice this concept is often realised
-using \emph{interpreted graph models} such as Finite State Machines
-and Petri Nets~\cite{Cortadella}, STGs, Conditional Partial Order
-Graphs~\cite{CPOG1}, and others. A partial application of the excitation
-function is often useful: $\mathsf{excited}(e)$ captures all states where
-event $e$ is excited; for example, if $\mathsf{excited}(e)=\mathbf{0}$ then
-$e$ is never excited or \emph{dead}. Event excitation concepts also
-form a commutative monoid with~$e=\mathbf{1}$ and~$\diamond=\wedge$.
-This definition corresponds to the \emph{parallel composition} operation,
-a standard notion for many behavioural models~\cite{PCOMP}.
-
-Some states may be impossible or undesirable during the normal system
-operation. To express this we use the \emph{invariant concept}, which
-captures all \emph{correct} or \emph{permitted} states of the system.
-A typical use case for invariant concepts is to specify assertions
-or assumptions about the system state space, that may by verified
-via model checking and/or used for optimising the implementation.
-In the most general form an invariant concept is a function
-\[
-\mathsf{invariant}:S\rightarrow\mathbb{B}
-\]
-that given a state $s\in S$ returns $1$ if $s$ is permitted by
-the invariant and $0$ otherwise. Note that if for some state $s$
-the initial concept $\mathsf{initial}(s)$ holds but the invariant
-$\mathsf{invariant}(s)$ does not hold, then the specification is
-\emph{contradictory} and cannot be satisfied by any implementation.
-We therefore usually assume that
-$\mathsf{initial}(s)\Rightarrow\mathsf{invariant}(s)$
-holds for all $s\in S$. Similarly, invariant concepts form a commutative
-monoid with~$e=\mathbf{1}$ and~$\diamond=\wedge$. Intuitively,
-if a system comprises two subsystems then its states should be permitted
-in both of the subsystems.
-
-One can derive other useful concepts from the three concepts described
-above, for instance,
-\[
-\mathsf{silent}(e,s)=\overline{\mathsf{excited}(e,s)}
-\]
-captures all states $s\in S$ when a given event $e\in E$ cannot
-occur. Furthermore, one can define other useful concepts that cannot
-be derived from the above, e.g., the \emph{execution concept} capturing
-the effects that different events have on the system state. Due to
-space limitations we only consider the three concepts defined above
-and their derivatives.
-
-All the above concepts are monoids, hence their combinations are
-trivially monoids too. It is convenient to consider triples
-of concepts $(\mathsf{initial},\mathsf{excited},\mathsf{invariant})$
-with $(\mathbf{1},\mathbf{1},\mathbf{1})$ representing the \emph{empty
-specification}, and composition
-$(\mathsf{initial}_{1},\mathsf{excited}_{1},\mathsf{invariant}_{1})\diamond(\mathsf{initial}_{2},\mathsf{excited}_{2},\mathsf{invariant}_{2})$
-defined as
-$(\mathsf{initial}_{1}\diamond\mathsf{initial}_{2},\mathsf{excited}_{1}\diamond\mathsf{excited}_{2},\mathsf{invariant}_{1}\diamond\mathsf{invariant}_{2})$.
-Note that composition of two non-contradictory specifications is
-always non-contradictory, that is if both
-$\mathsf{initial}_{1}(s)\Rightarrow\mathsf{invariant}_{1}(s)$
-and $\mathsf{initial}_{2}(s)\Rightarrow\mathsf{invariant}_{2}(s)$
-hold for all states $s\in S$, then
-$\mathsf{initial}_{1}(s)\diamond\mathsf{initial}_{2}(s)\Rightarrow\mathsf{invariant}_{1}(s)\diamond\mathsf{invariant}_{2}(s)$
-holds too.
+%\vspace{-2mm}
+%\section{Concepts \label{sec:Concepts}}
+%
+%In this section we formally introduce \emph{concepts} that we propose
+%to employ for the specification of asynchronous circuits. Below we
+%list (fairly standard) definitions and notational conventions that
+%are used throughout the paper.
+%
+%We use $\mathbb{B}$ to denote the set of Boolean values $\{0,1\}$.
+%Given two Boolean functions $f:X\rightarrow\mathbb{B}$ and
+%$g:X\rightarrow\mathbb{B}$
+%with the same domain $X$, we lift Boolean operators (disjunction~$\vee$,
+%conjunction~$\wedge$, implication $\Rightarrow$, etc.) in the usual
+%manner: $h=f\vee g$ means $h(x)=f(x)\vee g(x)$ for all $x\in X$,
+%etc. Furthermore,~$\mathbf{0}$ and~$\mathbf{1}$ stand for constant
+%Boolean functions that discard their input and return $0$
+%and $1$, respectively.
+%
+%A \emph{monoid} is a set $M$ and a binary operation $\diamond : M\times
+%M\rightarrow M$
+%satisfying two axioms:
+%\begin{itemize}
+%\item Identity: $e\diamond a=a\diamond e=a$ for any $a\in M$, where $e\in M$
+%is the \emph{identity element} of the monoid.
+%\item Associativity: $a\diamond(b\diamond c)=(a\diamond b)\diamond c$ for
+%all $a,b,c\in M$.
+%\end{itemize}
+%Monoid is the simplest mathematical structure that captures the notions
+%of \emph{emptiness} and \emph{composition}. The concepts introduced
+%in this section form \emph{commutative monoids}: they have identity
+%elements corresponding to empty specifications, and can be composed
+%to build complex concepts from simpler ones. The order of composition
+%does not matter, i.e., the concepts commute: $a\diamond b=b\diamond a$
+%for all $a,b\in M$.
+%
+%\vspace{-1mm}
+%\subsection{Abstract concepts}
+%
+%We first describe \emph{abstract concepts} that we use as building
+%blocks for developing \emph{domain specific concepts}, such as those
+%related to asynchronous circuits (Section~\ref{sub:Concepts-for-asynchronous}).
+%
+%Abstract concepts are parameterised by finite sets of \emph{states}
+%$S$ and \emph{events} $E$. The \emph{initial state concept} captures
+%all possible (or \emph{permitted}) initial states of the system. In
+%the most general form it is a function
+%\[
+%\mathsf{initial}:S\rightarrow\mathbb{B}
+%\]
+%that given a state $s\in S$ returns $1$ if $s$ is an initial state
+%and $0$ otherwise. In practice this concept is often realised as
+%a membership test of a set of initial states~$I\subseteq S$, i.e.
+%$\mathsf{initial}(s)=s\in I$. However, we prefer the functional form
+%because it is more abstract and permits other, often more efficient
+%realisations. Note that~$\mathbf{0}$ and~$\mathbf{1}$ have natural
+%interpretations as initial concepts: they correspond to systems with
+%no initial states, and systems where any state can be initial, respectively.
+%Initial state concepts form a commutative monoid with the identity
+%element~$\mathbf{1}$ and the composition operation~$\wedge$. Intuitively,
+%if a system comprises two subsystems then its initial state should
+%satisfy constraints imposed by both subsystems, hence the conjunction
+%operator.
+%
+%The \emph{event excitation concept} captures all states wherein a
+%given event can occur (or is \emph{excited}). In the most general
+%form it is a function
+%\[
+%\mathsf{excited}:E\times S\rightarrow\mathbb{B}
+%\]
+%that given an event $e\in E$ and a state $s\in S$ checks whether
+%$e$ is excited in $s$. In practice this concept is often realised
+%using \emph{interpreted graph models} such as Finite State Machines
+%and Petri Nets~\cite{Cortadella}, STGs, Conditional Partial Order
+%Graphs~\cite{CPOG1}, and others. A partial application of the excitation
+%function is often useful: $\mathsf{excited}(e)$ captures all states where
+%event $e$ is excited; for example, if $\mathsf{excited}(e)=\mathbf{0}$ then
+%$e$ is never excited or \emph{dead}. Event excitation concepts also
+%form a commutative monoid with~$e=\mathbf{1}$ and~$\diamond=\wedge$.
+%This definition corresponds to the \emph{parallel composition} operation,
+%a standard notion for many behavioural models~\cite{PCOMP}.
+%
+%Some states may be impossible or undesirable during the normal system
+%operation. To express this we use the \emph{invariant concept}, which
+%captures all \emph{correct} or \emph{permitted} states of the system.
+%A typical use case for invariant concepts is to specify assertions
+%or assumptions about the system state space, that may by verified
+%via model checking and/or used for optimising the implementation.
+%In the most general form an invariant concept is a function
+%\[
+%\mathsf{invariant}:S\rightarrow\mathbb{B}
+%\]
+%that given a state $s\in S$ returns $1$ if $s$ is permitted by
+%the invariant and $0$ otherwise. Note that if for some state $s$
+%the initial concept $\mathsf{initial}(s)$ holds but the invariant
+%$\mathsf{invariant}(s)$ does not hold, then the specification is
+%\emph{contradictory} and cannot be satisfied by any implementation.
+%We therefore usually assume that
+%$\mathsf{initial}(s)\Rightarrow\mathsf{invariant}(s)$
+%holds for all $s\in S$. Similarly, invariant concepts form a commutative
+%monoid with~$e=\mathbf{1}$ and~$\diamond=\wedge$. Intuitively,
+%if a system comprises two subsystems then its states should be permitted
+%in both of the subsystems.
+%
+%One can derive other useful concepts from the three concepts described
+%above, for instance,
+%\[
+%\mathsf{silent}(e,s)=\overline{\mathsf{excited}(e,s)}
+%\]
+%captures all states $s\in S$ when a given event $e\in E$ cannot
+%occur. Furthermore, one can define other useful concepts that cannot
+%be derived from the above, e.g., the \emph{execution concept} capturing
+%the effects that different events have on the system state. Due to
+%space limitations we only consider the three concepts defined above
+%and their derivatives.
+%
+%All the above concepts are monoids, hence their combinations are
+%trivially monoids too. It is convenient to consider triples
+%of concepts $(\mathsf{initial},\mathsf{excited},\mathsf{invariant})$
+%with $(\mathbf{1},\mathbf{1},\mathbf{1})$ representing the \emph{empty
+%specification}, and composition
+%$(\mathsf{initial}_{1},\mathsf{excited}_{1},\mathsf{invariant}_{1})\diamond(\mathsf{initial}_{2},\mathsf{excited}_{2},\mathsf{invariant}_{2})$
+%defined as
+%$(\mathsf{initial}_{1}\diamond\mathsf{initial}_{2},\mathsf{excited}_{1}\diamond\mathsf{excited}_{2},\mathsf{invariant}_{1}\diamond\mathsf{invariant}_{2})$.
+%Note that composition of two non-contradictory specifications is
+%always non-contradictory, that is if both
+%$\mathsf{initial}_{1}(s)\Rightarrow\mathsf{invariant}_{1}(s)$
+%and $\mathsf{initial}_{2}(s)\Rightarrow\mathsf{invariant}_{2}(s)$
+%hold for all states $s\in S$, then
+%$\mathsf{initial}_{1}(s)\diamond\mathsf{initial}_{2}(s)\Rightarrow\mathsf{invariant}_{1}(s)\diamond\mathsf{invariant}_{2}(s)$
+%holds too.
 
 %\vspace{-3mm}
 
-
-
-\subsection{Concepts for asynchronous
-circuits\label{sub:Concepts-for-asynchronous}}
+\section{Asynchronous Concepts\label{sec:async-concepts}}
 
 %\vspace{-2mm}
 
+In this section, we present the base asynchronous concepts. These concepts are the 
+bare minimum necessary for a translation to be succesful. 
 
-We now introduce concepts which are specific for the domain of asynchronous
-circuits and express them using the abstract concepts defined above.
+The abstract base of the concepts, on which these asynchronous specific circuits
+is discussed in~\cite{2015_Beaumont_MEMOCODE}.
+
+%We now introduce concepts which are specific for the domain of asynchronous
+%circuits and express them using the abstract concepts defined above.
 
 \textbf{\label{signal-level}Signal-level concepts:} States and events of an
 asynchronous
@@ -614,26 +616,45 @@ is used in the partially applied form. We will use a short-hand notation
 \mathit{cause}\rightsquigarrow\mathit{effect}
 \]
 for the causality concept for convenience.
-% TODO: Maybe bring back later.
-% While this concept is called \emph{causality}, this doesn't necessarily imply
-%timings, such as any $\mathit{cause}$ transition immediately forcing the
-% $\mathit{effect}$ transition it applies to. Causality can be used in order to
-%list all possible $\mathit{cause}$ transitions which need to occur in order
-% for an $\mathit{effect}$ transition.
+ 
+While this concept is called \emph{causality}, this doesn't necessarily imply
+timings, such as any $\mathit{cause}$ transition immediately forcing the
+ $\mathit{effect}$ transition it applies to. Causality can be used in order to
+list all possible $\mathit{cause}$ transitions which need to occur in order
+ for an $\mathit{effect}$ transition.
+
 One can compose two causality concepts using the monoid composition.
 \[
-a\rightsquigarrow c\ \diamond\ b\rightsquigarrow c
+a^{+}\rightsquigarrow c^{+}\ \diamond\ b^{+}\rightsquigarrow c^{+}
 \]
-corresponds to so-called AND-causality: event $c$ can only occur
-after both $a$ and $b$ have occurred. Specifying OR-causality is
-slightly more tricky:
+This corresponds to so-called AND-causality: event $c^{+}$ can only occur
+after both $a^{+}$ and $b^{+}$ have occurred. AND-causality is commonly used
+to imply behaviours in circuits, for specific requirements of effect transitions.  
+
+The above notation can cause long-winded specifications when lots of AND-causality is involved. 
+To solve this we have implemented a listing option. The following will acheive the same results:
+
 \[
-\mathsf{orCausality}(a,b,c)(e)=\begin{cases}
-\mathbf{1} & \mathit{if}\, c\neq\mathit{e}\\
-\mathsf{after}(a)\vee\mathsf{after}(b) & \mathit{otherwise}
+[a^{+}, b^{+}]\sim\&\sim>c^{+}
+\]
+This form of concept can be composed as usual with any other concepts.
+
+Specifying OR-causality is slightly more tricky:
+\[
+\mathsf{orCausality}(x^{+},y^{+},z^{+})(e)=\begin{cases}
+\mathbf{1} & \mathit{if}\, z^{+}\neq\mathit{e}\\
+\mathsf{after}(x^{+})\vee\mathsf{after}(y^{+}) & \mathit{otherwise}
 \end{cases}
 \]
-Event $c$ is thus excited after at least one cause has occurred.
+Event $z+$ is thus excited after at least one cause has occurred. OR-causality is less-common,
+but is useful in some standard gates, as we will discuss in Section~\ref{sec:gate-examples}.
+
+As with AND-causality, we have implemented a list notation for OR-causality. Instead of listing
+all the required cause transitions, one can list all the possible cause transitions per effect transition.
+
+\[
+[x^{+}, y^{+}]\sim|\sim>z^{+}
+\]
 
 \textbf{Gate-level concepts:} Using the causality concept we can express
 the behaviour of gates in asynchronous circuits. For example, a \emph{buffer}
@@ -671,14 +692,14 @@ a^{-}\rightsquigarrow b^{+}
 %\mathsf{inverter}\,r \,q
 % \]
 
-An \emph{AND gate} has two inputs $a$ and $b$ and one output~$c$, which
-synchronises rising transitions via AND-causality and falling transitions
-via OR-causality:
-\[
-\mathsf{and}(a, b, c)=a^{+}\!\rightsquigarrow\!c^{+} \diamond\
-b^{+}\!\rightsquigarrow\! c^{+} \diamond\
-\mathsf{orCausality}(a^{-},b^{-},c^{-})
-\]
+%An \emph{AND gate} has two inputs $a$ and $b$ and one output~$c$, which
+%synchronises rising transitions via AND-causality and falling transitions
+%via OR-causality:
+%\[
+%\mathsf{and}(a, b, c)=a^{+}\!\rightsquigarrow\!c^{+} \diamond\
+%b^{+}\!\rightsquigarrow\! c^{+} \diamond\
+%\mathsf{orCausality}(a^{-},b^{-},c^{-})
+%\]
 
 A \emph{C-element} is a gate with two inputs $a$ and $b$ and one
 output~$c$, which synchronises both rising and falling input transitions
@@ -696,15 +717,17 @@ An alternative way to express the same concept is to reuse the buffer concept:
 \mathsf{cElement}(a, b, c)=\mathsf{buffer}(a, c) \diamond \mathsf{buffer}(b, c)
 \]
 Indeed, a C-element combines the constraints imposed on the output
-transitions by two `virtual' buffers.
+transitions by two `virtual' buffers. An expanded example of a cElement can be
+found in~\cite{2015_Beaumont_MEMOCODE}.
 
-Behaviour of other gates can be similarly defined using concepts,
-see our open-source implementation~\cite{2016_concepts_github}.
+Behaviour of other gates can be similarly defined using concepts. We will dicuss
+this in Section~\ref{sec:gate-examples}.
+%see our open-source implementation~\cite{2016_concepts_github}.
 
 \textbf{Protocol-level concepts:} In addition to gate-level concepts
 described above it is often important to specify \emph{protocols}
-of interaction between multiple gates, components or signals, as
-discussed in the motivating example Section~\ref{sub:new-way}.
+of interaction between multiple gates, components or signals. 
+%as discussed in the motivating example Section~\ref{sub:new-way}.
 
 Here we demonstrate how one can use concepts to specify asynchronous handshakes
 and mutual exclusion mechanisms.
@@ -729,22 +752,22 @@ Indeed, this conceptual understanding of a handshake as being composed
 from a buffer and an inverter is often used by circuit designers as
 a convenient way of reasoning.
 
-In order to specify the initial state of a handshake between signals~$a$
-and~$b$, we use the $\mathsf{initialise}$ concept:
-\[
-\mathsf{initialise}(\mathit{signal},\mathit{value})=\mathsf{after}(signal,
-value)
-\]
-
-\noindent For example, $\mathsf{initialise}(a, 0)$ sets the state of the signal
-$a$ to $0$. We can compose an initial state concept with the handshake concept
-into a combined $\mathsf{handshake00}(a, b)$ concept as
-\[
-\mathsf{handshake}(a, b) \diamond \mathsf{initialise}(a, 0) \diamond
-\mathsf{initialise}(b, 0)
-\]
-The resulting concept corresponds to a handshake between signals~$a$
-and~$b$ that are both initially $0$.
+%In order to specify the initial state of a handshake between signals~$a$
+%and~$b$, we use the $\mathsf{initialise}$ concept:
+%\[
+%\mathsf{initialise}(\mathit{signal},\mathit{value})=\mathsf{after}(signal,
+%value)
+%\]
+%
+%\noindent For example, $\mathsf{initialise}(a, 0)$ sets the state of the signal
+%$a$ to $0$. We can compose an initial state concept with the handshake concept
+%into a combined $\mathsf{handshake00}(a, b)$ concept as
+%\[
+%\mathsf{handshake}(a, b) \diamond \mathsf{initialise}(a, 0) \diamond
+%\mathsf{initialise}(b, 0)
+%\]
+%The resulting concept corresponds to a handshake between signals~$a$
+%and~$b$ that are both initially $0$.
 
 The last important concept that requires an introduction is \emph{mutual
 exclusion} between two signals~$a$ and~$b$:
@@ -775,7 +798,23 @@ signals $g_{1}$ and $g_{2}$:
 \]}
 \vspace{-3mm}
 
-\textbf{Interface concepts:} To specify the type of a signal (\emph{input},
+\section{Concepts for translation\label{sec:trans-concepts}}
+
+The concepts we have discussed so far are aimed at specifying the behaviour of signals in a circuit.
+When translating these to STGs however, these behaviours do not necessarily result in a correct
+specification, meaning they will not be verifiable by standard tools, and therefore not useful in 
+further operations, such as synthesis.
+
+This is due to various parts of an STG that we have not yet discussed, which are important
+for specification, namely \emph{interface} and \emph{initial states}.
+
+\subsection{Interface concepts \label{sub:interface}} 
+
+An important part of a specification is how these signals interact with the outside world, which could
+be another scenario or another circuit, for example. These signals can be inputs from the outside world,
+outputs or an internal signal, which is used only within this scenario. 
+
+To specify the type of a signal (\emph{input},
 \emph{output} or \emph{internal}) we introduce the \textsf{interface} concept:
 \[
 \mathsf{interface} : A \rightarrow \{\mathsf{Input}, \mathsf{Output},
@@ -810,7 +849,8 @@ in the algorithm for automated translation of concepts to
 STGs (Section~\ref{sec:interop-with-stg}).
 
 Concepts \textsf{inputs}, \textsf{outputs}, \textsf{internals} are defined for
-specifying types of sets of signals for convenience. For example, to specify
+specifying types of sets of signals for convenience, and to be included inline with other
+concepts. For example, to specify
 that signals $a$ and $b$ are inputs, $c$ is an output, and $t$ is internal, it
 is possible to write:
 \[
@@ -818,8 +858,166 @@ is possible to write:
 \mathsf{internals}(\{t\}).
 \]
 
-\section{Circuit specification with concepts
-\label{sec:Circuit-specification-with}}
+\subsection{Initial state concepts \label{sub:initState}}
+
+Specifying the initial state is important, as it determines what the first transitions
+of a scenario will be. Without these, no transition can occur.
+
+Each signal must have it's initial state declared before translation can occur. 
+In order to specify the initial state of a handshake between signals~$a$
+and~$b$, we use the $\mathsf{initialise}$ concept:
+\[
+\mathsf{initialise}(\mathit{signal},\mathit{value})=\mathsf{after}(signal,
+value)
+\]
+
+\noindent The possible initial states are \emph{high} or \emph{low}, referred to as \emph{0} 
+or \emph{1} respectively:
+
+\[
+\mathsf{initialise}(a,0) \diamond \mathsf{initialise}(x, 1)
+\]
+
+\noindent A signal can only be declared as initially high or low. If the initial state of a signal is 
+not defined, and error will occur, and the translation will not continue. Conversely, 
+if the event a signal has it's initial state declared as both high and low,
+and is thus inconsistent, in a specification then the translation will also fail.
+
+For the ease of use, and to speed up the process, initial states can also be declared
+in lists by on state:
+
+\[
+\mathsf{initialise0} [a, b, c] \diamond \mathsf{initialise1} [x, y]
+\]
+
+\noindent As an example, we can include this in the specification of a handshake, to 
+create a handshake with built-in initial state.
+$\mathsf{initialise}(a, 0)$ sets the state of the signal
+$a$ to $0$. We can compose an initial state concept with the handshake concept
+into a combined $\mathsf{handshake00}(a, b)$ concept as
+\[
+\mathsf{handshake00} = \mathsf{handshake}(a, b) \diamond \mathsf{initialise}(a, 0) \diamond
+\mathsf{initialise}(b, 0)
+\]
+The resulting concept corresponds to a handshake between signals~$a$
+and~$b$ that are both initially $0$.
+
+\section{Concept examples \label{sec:gate-examples}}
+
+In our previous paper, \cite{2015_Beaumont_MEMOCODE}, we have 
+used a C-element as a small example of how we can specify a standard gate with concepts,
+and how there are several ways of describing these with concepts. 
+
+In this section, we will discuss the concept specification of some different gates,
+a Set-Reset latch which uses AND-causality, and an OR-gate and an AND-gate, both of 
+which use both AND- and OR-causality, and this proves to be more difficult to translate,
+which we will use an example in Section~\label{translation-algorithm}.
+
+\subsection{Set-reset latch \label{sub:srlatch}}
+
+A set-reset latch (S-R latch) is a particularly simple logic gate, used to store either a zero or one,
+depending on the inputs. 
+
+\begin{figure}[h]
+\begin{centering}
+\includegraphics[scale=0.51]{Images/sr-latch-circuit}
+\par\end{centering}
+\vspace{-1mm}
+\protect\caption{\label{fig:sr-latch-circuit} The symbol of an SR-latch}
+\vspace{-5mm}
+\end{figure}
+
+\noindent There are two input signals for this gate, $s$ and $r$, and a single output, $q$: 
+
+\begin{itemize}
+  \item $s$: \emph{set} - When this signal is high, it sets the output, meaning it sets it high.
+  \item $r$: \emph{reset} - When this signal is high, it resets the output, meaning it sets it low.
+  \item $q$: \emph{latched bit} - This stores the desired value, set depending on the values of the input signals.
+\end{itemize}
+
+\noindent From this information, we can start to specify the gate with concepts.
+
+First of all, we know the types of these signals, so let us sepcify the interface concept.
+
+\[
+\begin{array}{lcl}
+\mathsf{interface}&\hspace{-2mm}=&\hspace{-2mm}\mathsf{inputs}[s, r]~\diamond~\mathsf{outputs}[q]
+\end{array}
+\]
+
+Now we move onto the interaction between signals. First of all, to set the output high.
+When $s$ is high, this causes $q$ to go high. However, only after $s$ goes low can $q$ go low.
+In concepts this is: 
+
+\[
+\begin{array}{lcl}
+\mathsf{set}&\hspace{-2mm}=&\hspace{-2mm}s^{+} \rightsquigarrow q^{+} \diamond\, s^{-} \rightsquigarrow q^{-}
+\end{array}
+\]
+
+The interaction between the reset signal and the output will be opposite to this; $r$ going high causes $q$ 
+to go low. Only after $r$ goes low can $q$ go low. The concept for this is:
+
+\[
+\begin{array}{lcl}
+\mathsf{reset}&\hspace{-2mm}=&\hspace{-2mm}r^{+} \rightsquigarrow q^{-} \diamond\, r^{-} \rightsquigarrow q^{+}
+\end{array}
+\]
+
+The next concept to specify is the initial state. The description given mentions nothing
+to help with the initial state, but let's assume we would like the output to initially be 0. 
+To then allow the S-R latch to react only to the inputs, we can set the initial states of the 
+inputs to 0 too. This will mean that $s$ is not trying to take the output high, and $q$ is not
+blocking the output from going high. 
+
+\[
+\begin{array}{lcl}
+\mathsf{initialState}&\hspace{-2mm}=&\hspace{-2mm}\mathsf{initialise0} [a, b, c]
+\end{array}
+\]
+
+Finally, we can compose all of these concepts, in order to translate them to an STG. This concept will be:
+
+\[
+\begin{array}{lcl}
+\mathsf{SRLatch}&\hspace{-2mm}=&\hspace{-2mm}\mathsf{set} \diamond\, \mathsf{reset} \diamond\, \mathsf{interface} 
+\diamond\, \mathsf{initialState}.
+\end{array}
+\]
+
+It is possible reuse some previously defined concepts for the specification of an SRLatch,
+which may be preferred by users, as these describe their behaviour in terms of gates.  
+
+The $set$ concept features the same signal-level concepts as a buffer, and thus can be redefined
+as a buffer of $s$ and $q$. Similarly, the $reset$ concept can be replaced by an inverter between
+$r$ and $q$. Two gates cannot be connected in this way in an actual circuit, however
+it defines their behaviours in a different way, which may be understood better in some cases.
+
+Since this now reduces the number of concepts, and thus the length of the specification, we
+can define an SR-latch as follows:
+
+ \[
+\begin{array}{lcl}
+\mathsf{SRLatch}&\hspace{-2mm}=\mathsf{buffer}(s, q) \diamond\, \mathsf{inverter}(r, q) \diamond\, \mathsf{inputs}[s, r]\\ 
+&\diamond\, \mathsf{outputs}[q] \diamond\, \mathsf{initialise0} [s, r, q].
+\end{array}
+\]
+
+It's isn't necessary to split a scenario specification up into several concepts. 
+Depending on the size of the specification, it may be simpler and quicker to 
+produce a single concept like this.
+
+\subsection{OR-gate}
+
+The S-R latch features only AND-causality, and as we displayed 
+in~\cite{2015_Beaumont_MEMOCODE}, with the examples of a C-element 
+and a Buck controller, which only feature AND-causality, these can be translated
+to an STG. 
+
+OR-causality is quite different however, and causes some significant differences 
+in a resulting STG. 
+
+\section{Circuit specification with concepts \label{sec:Circuit-specification-with}}
 
 %\vspace{-2mm}
 
