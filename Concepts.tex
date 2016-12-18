@@ -121,7 +121,7 @@ Our contributions are as follows:
   \item We detail some necessary concepts, required for an accurate 
   translation in Section~\ref{sec:trans-concepts}
   \item We introduce some new gate examples and their specifications in
-  Section~\ref{sec:gate-examples}, presenting what can be acheived with
+  Section~\ref{sec:examples}, presenting what can be acheived with
   concepts, and how OR-causality becomes necessary in specifications.
   \item We present the implemented algorithm for translating concepts to STGs
   including OR-causality in Section~\ref{sec:algorithm}.
@@ -130,7 +130,7 @@ Our contributions are as follows:
 \noindent
 We start with a brief recap of asynchronous concepts as a specification language in
 Section~\ref{sec:async-concepts}, and discuss the design flow using the tool within our
-\noun{Workcraft} toolsuite in Section~\ref{sec:interop-with-stg}.
+\noun{Workcraft} toolsuite in Section~\ref{sub:interop-with-stg}.
 
 %Analogue and mixed-signal circuits become more tightly integrated with
 %digital systems, in particular in mobile and autonomous applications,
@@ -647,7 +647,7 @@ Specifying OR-causality is slightly more tricky:
 \end{cases}
 \]
 Event $z+$ is thus excited after at least one cause has occurred. OR-causality is less-common,
-but is useful in some standard gates, as we will discuss in Section~\ref{sec:gate-examples}.
+but is useful in some standard gates, as we will discuss in Section~\ref{sec:examples}.
 
 As with AND-causality, we have implemented a list notation for OR-causality. Instead of listing
 all the required cause transitions, one can list all the possible cause transitions per effect transition.
@@ -703,7 +703,7 @@ a^{-}\rightsquigarrow b^{+}
 
 A \emph{C-element} is a gate with two inputs $a$ and $b$ and one
 output~$c$, which synchronises both rising and falling input transitions
-via AND-causality (see an example in Section~\ref{sub:Comp-of-concepts}):
+via AND-causality:
 \[
 \mathsf{cElement}(a, b, c)=a^{+}\!\rightsquigarrow\! c^{+}\ \diamond\
 b^{+}\!\rightsquigarrow\! c^{+}\ \diamond\ a^{-}\!\rightsquigarrow\! c^{-}\
@@ -721,7 +721,7 @@ transitions by two `virtual' buffers. An expanded example of a cElement can be
 found in~\cite{2015_Beaumont_MEMOCODE}.
 
 Behaviour of other gates can be similarly defined using concepts. We will dicuss
-this in Section~\ref{sec:gate-examples}.
+this in Section~\ref{sec:examples}.
 %see our open-source implementation~\cite{2016_concepts_github}.
 
 \textbf{Protocol-level concepts:} In addition to gate-level concepts
@@ -846,7 +846,7 @@ circuits, as it helps to quickly identify errors (e.g. an input transition is
 caused by a hidden internal transition), and reuse existing tools for circuit
 simulation, verification and synthesis. Signal type information is also used
 in the algorithm for automated translation of concepts to
-STGs (Section~\ref{sec:interop-with-stg}).
+STGs (Section~\ref{sec:algorithm}).
 
 Concepts \textsf{inputs}, \textsf{outputs}, \textsf{internals} are defined for
 specifying types of sets of signals for convenience, and to be included inline with other
@@ -902,7 +902,7 @@ into a combined $\mathsf{handshake00}(a, b)$ concept as
 The resulting concept corresponds to a handshake between signals~$a$
 and~$b$ that are both initially $0$.
 
-\section{Concept examples \label{sec:gate-examples}}
+\section{Concept examples \label{sec:examples}}
 
 In our previous paper, \cite{2015_Beaumont_MEMOCODE}, we have 
 used a C-element as a small example of how we can specify a standard gate with concepts,
@@ -1256,257 +1256,259 @@ We have shown the difference that OR-casuality can make to an STG in this
 section, but not how this affects the translation. In Section~\ref{sec:algorithm} we 
 will discuss the implemented translation algorithm. 
 
-\section{Circuit specification with concepts \label{sec:Circuit-specification-with}}
+%\section{Circuit specification with concepts \label{sec:Circuit-specification-with}}
+%
+%%\vspace{-2mm}
+%
+%Here we present a method for deriving a circuit specification
+%from a set of concepts that describe its different aspects. We focus
+%on specification of \emph{speed-independent}~(SI) circuits, which
+%is an important class of asynchronous circuits~\cite{Muller_1959_ts}
+%that work correctly regardless of the gate delays, while the wires
+%are assumed to have negligible delays. Alternatively, one can regard
+%wire forks as isochronic and add wire delays to the corresponding
+%gate delays~(\emph{Quasi-Delay Insensitive}~(QDI) circuit
+%class~\cite{Martin_1986_dc}).
+%A convenient formalism for specification of SI circuits is
+%STGs~\cite{Chu_1987_phd}\cite{Rosenblum_1985_tpn},
+%which is a special kind of Petri nets~\cite{Petri_1962_phd} whose
+%transitions are associated with signal events.
+%
+%\vspace{-1mm}
+%\subsection{Petri nets and STGs}
+%
+%Formally, a Petri net is defined as a tuple~$PN=\left\langle P,\, T,\, F,\,
+%M_{0}\right\rangle $
+%comprising finite disjoint sets of \emph{places~}$P$ and \emph{transitions~}$T$,\emph{arcs} denoting the flow relation~$F\subseteq\left(P\times
+%T\right)\cup\left(T\times P\right)$
+%and \emph{initial~marking~}$M_{0}$. There is an arc between~$x\in P\cup T$
+%and~$y\in P\cup T$ iff $\left(x,y\right)\in F$. The \emph{preset}
+%of a node $x\in P\cup T$ is defined as $\bullet x=\left\{
+%y\mid\left(y,x\right)\in F\right\} $,
+%and the \emph{postset} as $x\bullet=\left\{ y\mid\left(x,y\right)\in F\right\}
+%$.
+%The dynamic behaviour of a Petri net is defined as a \emph{token~game},
+%changing marking according to the enabling and firing rules. A \emph{marking}
+%is a mapping~$M:\, P\rightarrow\mathbb{N}$ denoting the number of
+%\emph{tokens} in each place~($\mathbb{N}=\left\{ 0,1\right\} $ for
+%\emph{1-safe} Petri nets). A transition $t$ is \emph{enabled} iff
+%$\forall p,p\in\bullet t\Rightarrow M(p)>0$. The evolution of a Petri
+%net is possible by \emph{firing} the enabled transitions. \emph{Firing}
+%of a transition~$t$ results in a new marking $M'$ such that
+%\[
+%\forall p~M'(p)=\left\{ \begin{array}{ll}
+%M(p)-1 & \textit{if}\, p\in\bullet t\setminus t\bullet,\\
+%M(p)+1 & \textit{if}\, p\in t\bullet\setminus\bullet t,\\
+%M(p)\,\,\,\,\, & \textit{otherwise}.
+%\end{array}\right.
+%\]
+%
+%An STG is a 1-safe Petri net whose transitions are labelled by signal
+%events, i.e. $STG=\left\langle P,\, T,\, F,\, M_{0},\,\lambda,\, Z,\,
+%v_{0}\right\rangle $,
+%where $\lambda$ is a \emph{labelling~function}, $Z$ is a set of
+%\emph{signals} and $v_{0}\in\left\{ 0,\,1\right\} ^{\left|Z\right|}$
+%is a \emph{vector~of}~\emph{initial~signal~values}. The labelling
+%function $\lambda:T\rightarrow Z^{\pm}$ maps transitions into
+%\emph{signal~events}
+%$Z^{\pm}=Z\times\left\{+,-\right\}$. The signal events labelled $z^{+}$
+%and $z^{-}$ denote the transitions of signals $z\in Z$ from 0~to~1~(rising
+%edge), or from 1~to~0~(falling edge), respectively. The labelling
+%function does not have to be 1-to-1, i.e. transitions with the same
+%label may occur several times in the net. To distinguish transitions
+%with the same label and refer to them from the text an index $i\in\mathbb{N}$
+%is attached to their labels as follows: $\lambda\left(t\right)/i$,
+%where $i$ differs for different transitions with the same label.
+%STGs inherit the operational semantics of their underlying PNs, including
+%the notions of transition enabling and firing.
+%
+%Graphically, the places are represented as circles, transitions as
+%text labels, arcs are shown by arrows, and tokens are depicted by dots.
+%For simplicity, the places with one incoming
+%and one outgoing arc are often hidden, allowing arcs~(with implicit
+%places) between transitions.
+%
+%\begin{figure}[t]
+%\begin{centering}
+%\includegraphics[scale=0.51]{Images/C-element-with-environment}
+%\par\end{centering}
+%\vspace{-1mm}
+%\protect\caption{\label{fig:cElement-concepts}Example system specified using
+%concepts.}
+%\vspace{-5mm}
+%\end{figure}
+%
+%\vspace{-1mm}
+%\subsection{Composition of concepts\label{sub:Comp-of-concepts}}
+%
+%A single concept can be used to describe an initial state, invariant
+%states, a single event or a combination of these, yet describing some
+%protocols using this method can become long winded, as these can involve
+%multiple events. We make use of the monoid composition of concepts
+%to describe complex systems incrementally. Importantly we can mix
+%several levels of system description and refer to signal, gate and
+%protocol level concepts in one specification, depending on which level
+%is more convenient in a particular situation.
+%
+%Consider an example of a C-element, which has signals $a$ and $b$ as inputs,
+%and signal $c$ is the output. The output of this C-element is connected to
+%each of the inputs via an inverter. This is a simple example of a complete
+%system, of a C-element with an environment, see
+%Figure~\ref{fig:cElement-concepts}.
+%The example can be described by the following script:
+%
+%\vspace{-3mm}
+%\[
+%\begin{array}{lcl}
+%\mathsf{circuit}(a,b,c)&\hspace{-2mm}=&\hspace{-2mm}\mathsf{interface}~\diamond~\mathsf{outputRise}~\diamond~\mathsf{inputFall}\\
+%~&\hspace{-2mm}\diamond&\hspace{-2mm}\mathsf{outputFall}~\diamond~\mathsf{inputRise}~\diamond~\mathsf{initialState}\\
+%\mathsf{where}&~&\\
+%\,\,\,\,\,\,\mathsf{interface}&\hspace{-2mm}=&\hspace{-2mm}\mathsf{inputs}(\{a,b\})\diamond\mathsf{outputs}(\{c\})\\
+%\,\,\,\,\,\,\mathsf{outputRise}&\hspace{-2mm}=&\hspace{-2mm}\,a^{+}\rightsquigarrow
+%c^{+}\,\diamond\, b^{+}\rightsquigarrow c^{+}\\
+%\,\,\,\,\,\,\mathsf{inputFall}&\hspace{-2mm}=&\hspace{-2mm}c ^ {+}
+%\rightsquigarrow a^{-} \diamond\, c ^ {+} \rightsquigarrow b^{-}\\
+%\,\,\,\,\,\,\mathsf{outputFall}&\hspace{-2mm}=&\hspace{-2mm}a^{-}
+%\rightsquigarrow c^{-} \,\diamond\, b^{-} \rightsquigarrow c^{-}\\
+%\,\,\,\,\,\,\mathsf{inputRise}&\hspace{-2mm}=&\hspace{-2mm}c^{-}
+%\rightsquigarrow a^{+} \,\diamond\, c^{-} \rightsquigarrow b^{+}\\
+%\,\,\,\,\,\,\mathsf{initialState}&\hspace{-2mm}=&\hspace{-2mm}\mathsf{initialise}(a,0)
+%\diamond \mathsf{initialise}(b,0) \diamond \mathsf{initialise}(c,0)\\
+%\end{array}
+%\]
+%
+%The first concepts in this list is the \textsf{circuit} concept, defined as a
+%composition of the following five listed after the \textsf{where} keyword.
+%They describe certain aspects of the system: the first four are named
+%according to what they represent, for example, \textsf{outputRise} describes
+%the events which cause the output to rise, and the final concept defines
+%the initial states.
+%
+%%The sixth concept composes all of the first
+%%5 concepts, and can be translated to the STG shown in Figure~\ref{fig:cElement
+%%STG composition}.
+%%The first four are named according to what they represent, for example,
+%%\textsf{\textit{\emph{outputRise}}}\textit{ }describes the events
+%%which cause the output to rise\textit{.} The fifth concept is the
+%%initial state concept. This is necessary for the algorithm to produce
+%%a scenario STG, as the STG produced will not be usable without knowing
+%%the states the signals will be in when the scenario is entered. The
+%%algorithm takes this concept and works out where tokens need to be
+%%placed in the STG produced.
+%
+%Note: For better readability the format of concept scripts used in the article
+%differs from the actual syntax used in our current implementation, which is
+%embedded in Haskell programming language~\cite{1996_hudak_dsl} and therefore
+%relies on the standard Haskell syntax. The basis of the format used here is the
+%same, but there are some minor differences. An up-to-date description of the
+%actual syntax supported by the developed tool can be found in the
+%manual~\cite{2016_concepts_github}.
+%
+%%%Note: The code demonstrated in this example is the format required to work with
+%%the tool.
+%%%For the purpose of clarity, in this document we will be changing some of the
+%%syntax when defining concepts.
+%%%We will omit the module declaration, and imports, as well as
+%%%the declaration of types for \emph{circuit}, as these are required, and as such
+%%will be included in all concepts.
+%%%\emph{rise} and \emph{fall} are used in the code to represent a high and low
+%%transition respectively.
+%%%We replace \emph{rise} with '+' and \emph{fall} with '-'. Finally, the diamond
+%%composition operator in code is both a '<' and '>' as
+%%%a diamond character is not a standard keyboard character. In this article, we
+%%will use $\diamond$ to denote composition.
+%%%All examples in this article are available in the
+%%%format used by the tool from it's GitHub
+%%repository~\cite{2016_concepts_github}.
+%
+%This set of concepts is only one way of describing this C-element
+%and the environment. Another way could be to use gate-level concepts
+%and describe the environment explicitly. In this case the environment
+%allows the inputs to transition in the opposite direction to the output
+%$c$, as two inverters would. We can then compose this with the C-element
+%and the same \textsf{interface} and \textsf{initialState} concepts as follows:
+%
+%\vspace{-3mm}
+%\[
+%\begin{array}{lcl}
+%\mathsf{circuit}(a,b,c)&\hspace{-2mm}=&\hspace{-2mm}\mathsf{interface}~\diamond~\mathsf{cElement}(a,b,c)\\
+%~&\hspace{-2mm}\diamond&\hspace{-2mm}\mathsf{environment}\diamond\mathsf{initialState}\\
+%\mathsf{where}&~&~\\
+%\,\,\,\,\,\,\mathsf{environment}&\hspace{-2mm}=&\hspace{-2mm}\mathsf{inverter}(c,a)~\diamond~\mathsf{inverter}(c,b)
+%\end{array}
+%\]
+%
+%\noindent This specification is equivalent to the previous one; indeed one can
+%prove this by rearranging the primitive concepts using the commutativity
+%and associativity of the underlying commutative monoid. Consequently,
+%this specification will be translated to the same STG shown in
+%Figure~\ref{fig:cElement STG composition}.
+%
+%\begin{figure}[h]
+%\begin{centering}
+%\includegraphics[scale=0.25]{Images/stg-cElement}
+%\par\end{centering}
+%\protect\caption{\label{fig:cElement STG composition}STG for the example
+%system.}
+%\vspace{-4mm}
+%\end{figure}
+%
+%Finally, the designer can also rely on protocol-level concepts, producing
+%the following equivalent specification:
+%
+%\vspace{-3mm}
+%\[
+%\begin{array}{lcl}
+%\mathsf{circuit}(a,b,c)&\hspace{-2mm}=&\hspace{-2mm}\mathsf{interface}\\
+%~&\hspace{-2mm}\diamond&\hspace{-2mm}\mathsf{handshake00}(a,c)~\diamond~\mathsf{handshake00}(b,c)\\
+%\end{array}
+%\]
+%
+%\noindent Indeed, at the high level the circuit can be seen simply as two
+%handshakes synchronised on a common signal.
+%
+%This example demonstrates that the presented formal notation for capturing
+%concepts is very flexible and provides the designer with a rich selection
+%of available levels of abstraction, which could be used not only for
+%deriving simplest possible specifications but also for cross-checking
+%the adequacy of specifications by \emph{refactoring} them according
+%to the concept composition laws.
+%
+%\vspace{-1mm}
+%\subsection{Multiple behavioural scenarios\label{sub:scenarios}}
+%
+%So far we have only considered systems operating in a single behavioural
+%\textit{scenario} specified by a composition of concepts. However,
+%real-life systems often need to support multiple scenarios, e.g. start-up
+%and normal operation, different power modes, etc. This allows
+%each individual scenario to be designed using concepts,
+%and tested individually to ensure they work correctly, before these
+%are combined to produce a full system specification.
+%
+%To increase the reuse of scenarios, which helps reduce design
+%time of future systems, this method supports the use of pre-designed
+%scenarios as concepts.
+%
+%In some cases, a designer may find it easier to split the specification
+%of operational modes further than scenarios and design certain elements
+%separately. In this way, a model may be produced from concepts, which
+%may not be an operational mode on its own, but can be composed and
+%tested separately. Having several elements predefined
+%using concepts may become useful for quickly designing systems. A
+%predefined logic gate, for example, could be useful to quickly include
+%in any list of concepts when designing multiple scenarios. An STG
+%produced of this element can be referenced in a list of concepts by
+%name (provided that the definition is appropriately imported into
+%the current namespace). When a list of concepts is passed into the
+%STG translation algorithm, all referenced concepts are replaced by
+%the corresponding definitions.
+%
+%%The process of combining scenarios is explained further in
+%\S~\ref{sub:scenario-composition}
+%\vspace{-1mm}
 
-%\vspace{-2mm}
-
-Here we present a method for deriving a circuit specification
-from a set of concepts that describe its different aspects. We focus
-on specification of \emph{speed-independent}~(SI) circuits, which
-is an important class of asynchronous circuits~\cite{Muller_1959_ts}
-that work correctly regardless of the gate delays, while the wires
-are assumed to have negligible delays. Alternatively, one can regard
-wire forks as isochronic and add wire delays to the corresponding
-gate delays~(\emph{Quasi-Delay Insensitive}~(QDI) circuit
-class~\cite{Martin_1986_dc}).
-A convenient formalism for specification of SI circuits is
-STGs~\cite{Chu_1987_phd}\cite{Rosenblum_1985_tpn},
-which is a special kind of Petri nets~\cite{Petri_1962_phd} whose
-transitions are associated with signal events.
-
-\vspace{-1mm}
-\subsection{Petri nets and STGs}
-
-Formally, a Petri net is defined as a tuple~$PN=\left\langle P,\, T,\, F,\,
-M_{0}\right\rangle $
-comprising finite disjoint sets of \emph{places~}$P$ and \emph{transitions~}$T$,\emph{arcs} denoting the flow relation~$F\subseteq\left(P\times
-T\right)\cup\left(T\times P\right)$
-and \emph{initial~marking~}$M_{0}$. There is an arc between~$x\in P\cup T$
-and~$y\in P\cup T$ iff $\left(x,y\right)\in F$. The \emph{preset}
-of a node $x\in P\cup T$ is defined as $\bullet x=\left\{
-y\mid\left(y,x\right)\in F\right\} $,
-and the \emph{postset} as $x\bullet=\left\{ y\mid\left(x,y\right)\in F\right\}
-$.
-The dynamic behaviour of a Petri net is defined as a \emph{token~game},
-changing marking according to the enabling and firing rules. A \emph{marking}
-is a mapping~$M:\, P\rightarrow\mathbb{N}$ denoting the number of
-\emph{tokens} in each place~($\mathbb{N}=\left\{ 0,1\right\} $ for
-\emph{1-safe} Petri nets). A transition $t$ is \emph{enabled} iff
-$\forall p,p\in\bullet t\Rightarrow M(p)>0$. The evolution of a Petri
-net is possible by \emph{firing} the enabled transitions. \emph{Firing}
-of a transition~$t$ results in a new marking $M'$ such that
-\[
-\forall p~M'(p)=\left\{ \begin{array}{ll}
-M(p)-1 & \textit{if}\, p\in\bullet t\setminus t\bullet,\\
-M(p)+1 & \textit{if}\, p\in t\bullet\setminus\bullet t,\\
-M(p)\,\,\,\,\, & \textit{otherwise}.
-\end{array}\right.
-\]
-
-An STG is a 1-safe Petri net whose transitions are labelled by signal
-events, i.e. $STG=\left\langle P,\, T,\, F,\, M_{0},\,\lambda,\, Z,\,
-v_{0}\right\rangle $,
-where $\lambda$ is a \emph{labelling~function}, $Z$ is a set of
-\emph{signals} and $v_{0}\in\left\{ 0,\,1\right\} ^{\left|Z\right|}$
-is a \emph{vector~of}~\emph{initial~signal~values}. The labelling
-function $\lambda:T\rightarrow Z^{\pm}$ maps transitions into
-\emph{signal~events}
-$Z^{\pm}=Z\times\left\{+,-\right\}$. The signal events labelled $z^{+}$
-and $z^{-}$ denote the transitions of signals $z\in Z$ from 0~to~1~(rising
-edge), or from 1~to~0~(falling edge), respectively. The labelling
-function does not have to be 1-to-1, i.e. transitions with the same
-label may occur several times in the net. To distinguish transitions
-with the same label and refer to them from the text an index $i\in\mathbb{N}$
-is attached to their labels as follows: $\lambda\left(t\right)/i$,
-where $i$ differs for different transitions with the same label.
-STGs inherit the operational semantics of their underlying PNs, including
-the notions of transition enabling and firing.
-
-Graphically, the places are represented as circles, transitions as
-text labels, arcs are shown by arrows, and tokens are depicted by dots.
-For simplicity, the places with one incoming
-and one outgoing arc are often hidden, allowing arcs~(with implicit
-places) between transitions.
-
-\begin{figure}[t]
-\begin{centering}
-\includegraphics[scale=0.51]{Images/C-element-with-environment}
-\par\end{centering}
-\vspace{-1mm}
-\protect\caption{\label{fig:cElement-concepts}Example system specified using
-concepts.}
-\vspace{-5mm}
-\end{figure}
-
-\vspace{-1mm}
-\subsection{Composition of concepts\label{sub:Comp-of-concepts}}
-
-A single concept can be used to describe an initial state, invariant
-states, a single event or a combination of these, yet describing some
-protocols using this method can become long winded, as these can involve
-multiple events. We make use of the monoid composition of concepts
-to describe complex systems incrementally. Importantly we can mix
-several levels of system description and refer to signal, gate and
-protocol level concepts in one specification, depending on which level
-is more convenient in a particular situation.
-
-Consider an example of a C-element, which has signals $a$ and $b$ as inputs,
-and signal $c$ is the output. The output of this C-element is connected to
-each of the inputs via an inverter. This is a simple example of a complete
-system, of a C-element with an environment, see
-Figure~\ref{fig:cElement-concepts}.
-The example can be described by the following script:
-
-\vspace{-3mm}
-\[
-\begin{array}{lcl}
-\mathsf{circuit}(a,b,c)&\hspace{-2mm}=&\hspace{-2mm}\mathsf{interface}~\diamond~\mathsf{outputRise}~\diamond~\mathsf{inputFall}\\
-~&\hspace{-2mm}\diamond&\hspace{-2mm}\mathsf{outputFall}~\diamond~\mathsf{inputRise}~\diamond~\mathsf{initialState}\\
-\mathsf{where}&~&\\
-\,\,\,\,\,\,\mathsf{interface}&\hspace{-2mm}=&\hspace{-2mm}\mathsf{inputs}(\{a,b\})\diamond\mathsf{outputs}(\{c\})\\
-\,\,\,\,\,\,\mathsf{outputRise}&\hspace{-2mm}=&\hspace{-2mm}\,a^{+}\rightsquigarrow
-c^{+}\,\diamond\, b^{+}\rightsquigarrow c^{+}\\
-\,\,\,\,\,\,\mathsf{inputFall}&\hspace{-2mm}=&\hspace{-2mm}c ^ {+}
-\rightsquigarrow a^{-} \diamond\, c ^ {+} \rightsquigarrow b^{-}\\
-\,\,\,\,\,\,\mathsf{outputFall}&\hspace{-2mm}=&\hspace{-2mm}a^{-}
-\rightsquigarrow c^{-} \,\diamond\, b^{-} \rightsquigarrow c^{-}\\
-\,\,\,\,\,\,\mathsf{inputRise}&\hspace{-2mm}=&\hspace{-2mm}c^{-}
-\rightsquigarrow a^{+} \,\diamond\, c^{-} \rightsquigarrow b^{+}\\
-\,\,\,\,\,\,\mathsf{initialState}&\hspace{-2mm}=&\hspace{-2mm}\mathsf{initialise}(a,0)
-\diamond \mathsf{initialise}(b,0) \diamond \mathsf{initialise}(c,0)\\
-\end{array}
-\]
-
-The first concepts in this list is the \textsf{circuit} concept, defined as a
-composition of the following five listed after the \textsf{where} keyword.
-They describe certain aspects of the system: the first four are named
-according to what they represent, for example, \textsf{outputRise} describes
-the events which cause the output to rise, and the final concept defines
-the initial states.
-
-%The sixth concept composes all of the first
-%5 concepts, and can be translated to the STG shown in Figure~\ref{fig:cElement
-%STG composition}.
-%The first four are named according to what they represent, for example,
-%\textsf{\textit{\emph{outputRise}}}\textit{ }describes the events
-%which cause the output to rise\textit{.} The fifth concept is the
-%initial state concept. This is necessary for the algorithm to produce
-%a scenario STG, as the STG produced will not be usable without knowing
-%the states the signals will be in when the scenario is entered. The
-%algorithm takes this concept and works out where tokens need to be
-%placed in the STG produced.
-
-Note: For better readability the format of concept scripts used in the article
-differs from the actual syntax used in our current implementation, which is
-embedded in Haskell programming language~\cite{1996_hudak_dsl} and therefore
-relies on the standard Haskell syntax. The basis of the format used here is the
-same, but there are some minor differences. An up-to-date description of the
-actual syntax supported by the developed tool can be found in the
-manual~\cite{2016_concepts_github}.
-
-%%Note: The code demonstrated in this example is the format required to work with
-%the tool.
-%%For the purpose of clarity, in this document we will be changing some of the
-%syntax when defining concepts.
-%%We will omit the module declaration, and imports, as well as
-%%the declaration of types for \emph{circuit}, as these are required, and as such
-%will be included in all concepts.
-%%\emph{rise} and \emph{fall} are used in the code to represent a high and low
-%transition respectively.
-%%We replace \emph{rise} with '+' and \emph{fall} with '-'. Finally, the diamond
-%composition operator in code is both a '<' and '>' as
-%%a diamond character is not a standard keyboard character. In this article, we
-%will use $\diamond$ to denote composition.
-%%All examples in this article are available in the
-%%format used by the tool from it's GitHub
-%repository~\cite{2016_concepts_github}.
-
-This set of concepts is only one way of describing this C-element
-and the environment. Another way could be to use gate-level concepts
-and describe the environment explicitly. In this case the environment
-allows the inputs to transition in the opposite direction to the output
-$c$, as two inverters would. We can then compose this with the C-element
-and the same \textsf{interface} and \textsf{initialState} concepts as follows:
-
-\vspace{-3mm}
-\[
-\begin{array}{lcl}
-\mathsf{circuit}(a,b,c)&\hspace{-2mm}=&\hspace{-2mm}\mathsf{interface}~\diamond~\mathsf{cElement}(a,b,c)\\
-~&\hspace{-2mm}\diamond&\hspace{-2mm}\mathsf{environment}\diamond\mathsf{initialState}\\
-\mathsf{where}&~&~\\
-\,\,\,\,\,\,\mathsf{environment}&\hspace{-2mm}=&\hspace{-2mm}\mathsf{inverter}(c,a)~\diamond~\mathsf{inverter}(c,b)
-\end{array}
-\]
-
-\noindent This specification is equivalent to the previous one; indeed one can
-prove this by rearranging the primitive concepts using the commutativity
-and associativity of the underlying commutative monoid. Consequently,
-this specification will be translated to the same STG shown in
-Figure~\ref{fig:cElement STG composition}.
-
-\begin{figure}[h]
-\begin{centering}
-\includegraphics[scale=0.25]{Images/stg-cElement}
-\par\end{centering}
-\protect\caption{\label{fig:cElement STG composition}STG for the example
-system.}
-\vspace{-4mm}
-\end{figure}
-
-Finally, the designer can also rely on protocol-level concepts, producing
-the following equivalent specification:
-
-\vspace{-3mm}
-\[
-\begin{array}{lcl}
-\mathsf{circuit}(a,b,c)&\hspace{-2mm}=&\hspace{-2mm}\mathsf{interface}\\
-~&\hspace{-2mm}\diamond&\hspace{-2mm}\mathsf{handshake00}(a,c)~\diamond~\mathsf{handshake00}(b,c)\\
-\end{array}
-\]
-
-\noindent Indeed, at the high level the circuit can be seen simply as two
-handshakes synchronised on a common signal.
-
-This example demonstrates that the presented formal notation for capturing
-concepts is very flexible and provides the designer with a rich selection
-of available levels of abstraction, which could be used not only for
-deriving simplest possible specifications but also for cross-checking
-the adequacy of specifications by \emph{refactoring} them according
-to the concept composition laws.
-
-\vspace{-1mm}
-\subsection{Multiple behavioural scenarios\label{sub:scenarios}}
-
-So far we have only considered systems operating in a single behavioural
-\textit{scenario} specified by a composition of concepts. However,
-real-life systems often need to support multiple scenarios, e.g. start-up
-and normal operation, different power modes, etc. This allows
-each individual scenario to be designed using concepts,
-and tested individually to ensure they work correctly, before these
-are combined to produce a full system specification.
-
-To increase the reuse of scenarios, which helps reduce design
-time of future systems, this method supports the use of pre-designed
-scenarios as concepts.
-
-In some cases, a designer may find it easier to split the specification
-of operational modes further than scenarios and design certain elements
-separately. In this way, a model may be produced from concepts, which
-may not be an operational mode on its own, but can be composed and
-tested separately. Having several elements predefined
-using concepts may become useful for quickly designing systems. A
-predefined logic gate, for example, could be useful to quickly include
-in any list of concepts when designing multiple scenarios. An STG
-produced of this element can be referenced in a list of concepts by
-name (provided that the definition is appropriately imported into
-the current namespace). When a list of concepts is passed into the
-STG translation algorithm, all referenced concepts are replaced by
-the corresponding definitions.
-
-%The process of combining scenarios is explained further in
-\S~\ref{sub:scenario-composition}
-\vspace{-1mm}
-\section{Interoperability with STG based tools\label{sec:interop-with-stg}}
+\vspace{-2mm}
+\section{Concepts to STG translation algorithm\label{sec:algorithm}}
 
 Concepts are a useful way of specifying asynchronous circuits, but
 specifications also need to be \emph{verified} against certain properties to
@@ -1519,9 +1521,7 @@ such as \noun{Petrify}~\cite{Cortadella} and
 In order to reuse the tools developed by the community, it is
 necessary to be able to automatically translate concept specifications to STGs.
 In this section, we present a translation
-algorithm~(Section~\ref{sub:translating})
-and discuss ways of composing multiple behavioural scenarios into a single STG
-specification~(Section~\ref{sub:scenario-composition}).
+algorithm~(Section~\ref{sec:algorithm}).
 
 \begin{algorithm}[t]
 \begin{algorithmic}
@@ -1554,44 +1554,37 @@ specification~(Section~\ref{sub:scenario-composition}).
 %%A method of synthesizing concepts directly also exists, which will be
 %explained,giving more options to designers.
 
-\vspace{-2mm}
-\subsection{Translating concepts to STGs\label{sub:translating}}
-
-As discussed in Section~\ref{sub:Comp-of-concepts}, there are multiple ways of
+As displayed in Section~\ref{sec:examples}, there are multiple ways of
 representing a specification using concepts. However, all levels of
 abstraction available to the designer are built out of primitive low-level
 signal concepts such as causality. Given a specification, we can therefore
 break down all gate- and protocol-level constructs into `atoms', which
 significantly simplifies the translation task.
 
-Using the example of a C-element with an environment, any representation
-mentioned in Section~\ref{sub:Comp-of-concepts} can be broken down into the
-following
-list of low-level concepts:
 
-\vspace{-3mm}
-\[
-\begin{array}{lcl}
-\hspace{-2mm}\mathsf{circuit}(a,b,c)&\hspace{-2mm}=&\hspace{-2mm}a^{+}\rightsquigarrow
-c^{+} \diamond b^{+}\rightsquigarrow c^{+} \diamond c^{+}\rightsquigarrow a^{-}
-\diamond c^{+}
-\rightsquigarrow b^{-}\\
-~&\hspace{-2mm}\diamond&\hspace{-2mm}a^{-}\rightsquigarrow c^{-} \diamond
-b^{-}\rightsquigarrow c^{-} \diamond c^{-}\rightsquigarrow a^{+} \diamond
-c^{-}\rightsquigarrow b^{+}\\
-~&\hspace{-2mm}\diamond&\hspace{-2mm}\mathsf{initialise}(a,0) \diamond
-\mathsf{initialise}(b,0) \diamond \mathsf{initialise}(c,0)\\
-~&\hspace{-2mm}\diamond&\hspace{-2mm}\mathsf{inputs}(\{a,b\})\diamond\mathsf{outputs}(\{c\})
-\end{array}
-\]
-\vspace{2mm}
-\noindent One can see that the above list of primitive concepts matches
-the STG in Figure~\ref{fig:cElement STG composition} very closely, in particularthe causality concepts match the arcs of the STG. Below we describe a general
-translation algorithm that in particular can produce this STG fully
-automatically.
-The algorithm is implemented and integrated in the open-source tool
-\noun{Workcraft},
-where it produces STGs in commonly used \textsf{*.g} file format.
+%\vspace{-3mm}
+%\[
+%\begin{array}{lcl}
+%\hspace{-2mm}\mathsf{circuit}(a,b,c)&\hspace{-2mm}=&\hspace{-2mm}a^{+}\rightsquigarrow
+%c^{+} \diamond b^{+}\rightsquigarrow c^{+} \diamond c^{+}\rightsquigarrow a^{-}
+%\diamond c^{+}
+%\rightsquigarrow b^{-}\\
+%~&\hspace{-2mm}\diamond&\hspace{-2mm}a^{-}\rightsquigarrow c^{-} \diamond
+%b^{-}\rightsquigarrow c^{-} \diamond c^{-}\rightsquigarrow a^{+} \diamond
+%c^{-}\rightsquigarrow b^{+}\\
+%~&\hspace{-2mm}\diamond&\hspace{-2mm}\mathsf{initialise}(a,0) \diamond
+%\mathsf{initialise}(b,0) \diamond \mathsf{initialise}(c,0)\\
+%~&\hspace{-2mm}\diamond&\hspace{-2mm}\mathsf{inputs}(\{a,b\})\diamond\mathsf{outputs}(\{c\})
+%\end{array}
+%\]
+%\vspace{2mm}
+%\noindent One can see that the above list of primitive concepts matches
+%the STG in Figure~\ref{fig:cElement STG composition} very closely, in particularthe causality concepts match the arcs of the STG. Below we describe a general
+%translation algorithm that in particular can produce this STG fully
+%automatically.
+%The algorithm is implemented and integrated in the open-source tool
+%\noun{Workcraft},
+%where it produces STGs in commonly used \textsf{*.g} file format.
 
 Given a list of primitive concepts, the algorithm starts by creating so-called
 \emph{consistency loops} for each signal in the specified interface, which
@@ -1601,7 +1594,7 @@ resulting
 STG satisfies the property of \emph{consistency}~\cite{Cortadella}.
 The places between the transitions of a signal determine its state.
 Figure~\ref{fig:step-by-step1} shows consistency loops created for the example.
-\vspace{-2mm}
+
 \begin{figure}[h]
 \begin{centering}
 \includegraphics[scale=0.23]{Images/Step-by-step1}
@@ -1634,7 +1627,6 @@ $a^{+}\rightsquigarrow c^{+}$.}
 We continue translating the remaining causality concepts in the same manner
 obtaining the STG shown in Figure~\ref{fig:step-by-step9}.
 
-\vspace{-2mm}
 \begin{figure}[h]
 \begin{centering}
 \includegraphics[scale=0.23]{Images/Step-by-step9}
@@ -1665,13 +1657,14 @@ state.}
 \vspace{-3mm}
 \end{figure}
 
-The resulting STG and the STG shown in Figure~\ref{fig:cElement STG composition}look very different but they are behaviourally equivalent. The latter is much
+The resulting STG and the STG shown above
+look very different but they are behaviourally equivalent. The latter is much
 more
 compact and easier to read though, and it would be preferable to show it to the
 designer instead of the one obtained by our translation algorithm. Our
 implementation supports automated \emph{resynthesis} of the resulting STG
-using \noun{Petrify}, and can therefore seamlessly produce the STG in
-Figure~\ref{fig:cElement STG composition} from the given specification.
+using \noun{Petrify}, and can therefore seamlessly produce the STG above 
+from the given specification.
 
 %%By integrating concepts into \noun{Workcraft} we allow a designer to
 %%visualise their concept designs as STGs, to simulate, verify and synthesise
@@ -1733,82 +1726,83 @@ into STGs}
 \vspace{-6mm}
 \end{figure}
 
-Using the example in Section~\ref{sub:Comp-of-concepts}, a C-element with
+Using the example of, a C-element with
 environment,
 we can translate the concepts corresponding to the C-element and the two
 environment inverters individually. Including the initial states, this would
-give us the STGs found in Figure~\ref{fig:IndividConceptStgs}. These STGs can becomposed using the parallel composition, the outcome of which will be equivalentto the result obtained by translating the complete specification, bringing us
+give us the STGs found in Figure~\ref{fig:IndividConceptStgs}. These STGs 
+can becomposed using the parallel composition, the outcome of which will be equivalent
+to the result obtained by translating the complete specification, bringing us
 back
-to the STG in Figure~\ref{fig:cElement STG composition}.
+to the STG in an earlier section. 
 
-\vspace{-1mm}
-\subsection{Scenario combination\label{sub:scenario-composition}}
-
-As mentioned in Section~\ref{sub:scenarios}, concepts are used to specify
-a single behavioural scenario.
-which can be tested and verified separately to allow for easier changes and additions 
-to smaller, less complex, specifications. However, when scenarios are tested and
- prove to work as required, and satisfy all necessary properties, they then need 
-to be combined to produce a full system specification, so this can be tested and 
-verified, and ultimately be synthesized to produce an implementation. 
-When combining scenarios, there are several things to consider in how the scenarios fit together.
-Depending on the application, the circuit is being designed for
-some scenarios may need to operate in certain
-orders, for example, one scenario may exist simply to initialise the
-circuit, therefore this scenario needs to run at start-up, before
-any other scenario, and then never be run again while the
-system remains active.
-
-To address this, we can define \emph{templates},
-which can be used to combine scenarios in various ways.
-With this the designer specifies how the scenarios should
-be combined, and if an order is needed, the order the scenarios should
-be run from start up. The following are some examples of templates
-that can be used to combine scenarios:
-
-\textbf{Sequential template:} Sequential combination will allow a designer
-to select the order of all scenarios, so when combined, they will
-run in a sequence. In this case, there may be a clear order in which
-the scenarios may run, and this needs to be specified by the designer:
-
-\vspace{-2mm}
-\begin{center}
-\includegraphics[scale=0.42]{Images/sequential_combination}
-\end{center}
-
-\textbf{Concurrent template:} In this case there is no order, but one or more
-of the scenarios in a specification may run concurrently. It may be necessary
-to limit concurrency by specifying, for instance, the number of scenarios
-that can be active simultaneously:
-
-\vspace{-2mm}
-\begin{center}
-\includegraphics[scale=0.42]{Images/concurrent_combination}
-\end{center}
-
-\textbf{Non-deterministic choice template:} This template will combine the
-scenarios in a way that allows any of the scenarios to run, but not
-according to any order to deal with the lack of determinism in the
-system, using one token which is used only by the running scenario,
-and returned when the scenario completes:
-
-\vspace{2mm}
-\begin{center}
-\includegraphics[scale=0.42]{Images/non_deterministic_combination}
-\end{center}
-
-There may be more complex requirements to combination of scenarios, and it
-is possible to combine some scenarios using one template, then including
-the result in a combination with other scenarios using another template.
-For example, a system which is non-deterministic may also have a scenario
-that runs at start up. In this case, a designer could combine all
-non-deterministic scenarios first, then combine the resulting STG with
-the initialising scenario, setting the order so this runs first.
-
-This method can allow for many possible scenario combination
-styles, and more complex systems can be combined automatically, which
-in comparison to manual combination, could reduce the number of errors
-as well as design time.
+%\subsection{Scenario combination\label{sub:scenario-composition}}
+%
+%As mentioned in Section~\ref{sub:scenarios}, concepts are used to specify
+%a single behavioural scenario.
+%which can be tested and verified separately to allow for easier changes and additions 
+%to smaller, less complex, specifications. However, when scenarios are tested and
+% prove to work as required, and satisfy all necessary properties, they then need 
+%to be combined to produce a full system specification, so this can be tested and 
+%verified, and ultimately be synthesized to produce an implementation. 
+%When combining scenarios, there are several things to consider in how the scenarios fit together.
+%Depending on the application, the circuit is being designed for
+%some scenarios may need to operate in certain
+%orders, for example, one scenario may exist simply to initialise the
+%circuit, therefore this scenario needs to run at start-up, before
+%any other scenario, and then never be run again while the
+%system remains active.
+%
+%To address this, we can define \emph{templates},
+%which can be used to combine scenarios in various ways.
+%With this the designer specifies how the scenarios should
+%be combined, and if an order is needed, the order the scenarios should
+%be run from start up. The following are some examples of templates
+%that can be used to combine scenarios:
+%
+%\textbf{Sequential template:} Sequential combination will allow a designer
+%to select the order of all scenarios, so when combined, they will
+%run in a sequence. In this case, there may be a clear order in which
+%the scenarios may run, and this needs to be specified by the designer:
+%
+%\vspace{-2mm}
+%\begin{center}
+%\includegraphics[scale=0.42]{Images/sequential_combination}
+%\end{center}
+%
+%\textbf{Concurrent template:} In this case there is no order, but one or more
+%of the scenarios in a specification may run concurrently. It may be necessary
+%to limit concurrency by specifying, for instance, the number of scenarios
+%that can be active simultaneously:
+%
+%\vspace{-2mm}
+%\begin{center}
+%\includegraphics[scale=0.42]{Images/concurrent_combination}
+%\end{center}
+%
+%\textbf{Non-deterministic choice template:} This template will combine the
+%scenarios in a way that allows any of the scenarios to run, but not
+%according to any order to deal with the lack of determinism in the
+%system, using one token which is used only by the running scenario,
+%and returned when the scenario completes:
+%
+%\vspace{2mm}
+%\begin{center}
+%\includegraphics[scale=0.42]{Images/non_deterministic_combination}
+%\end{center}
+%
+%There may be more complex requirements to combination of scenarios, and it
+%is possible to combine some scenarios using one template, then including
+%the result in a combination with other scenarios using another template.
+%For example, a system which is non-deterministic may also have a scenario
+%that runs at start up. In this case, a designer could combine all
+%non-deterministic scenarios first, then combine the resulting STG with
+%the initialising scenario, setting the order so this runs first.
+%
+%This method can allow for many possible scenario combination
+%styles, and more complex systems can be combined automatically, which
+%in comparison to manual combination, could reduce the number of errors
+%as well as design time.
 
 \subsection{Tool integration}
 
@@ -2712,6 +2706,8 @@ using concepts.
 %%be used at a later stage of the design process, once the complete
 %%model of a system~(or a subsystem) has been obtained using the proposed
 %%methodology.
+
+\subsection{Interoperability with STG based tools \label{sub:interop-with-stg}}
 
 \section{Conclusions and future work\label{sec:conclusions}}
 
