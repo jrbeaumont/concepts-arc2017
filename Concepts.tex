@@ -1518,10 +1518,13 @@ be \emph{synthesised} into efficient circuit implementations. Many software
 tools exist which automatically verify and synthesise STG specifications,
 such as \noun{Petrify}~\cite{Cortadella} and
 \noun{Mpsat}~\cite{khomenko2004detecting}.
+
 In order to reuse the tools developed by the community, it is
 necessary to be able to automatically translate concept specifications to STGs.
-In this section, we present a translation
-algorithm~(Section~\ref{sec:algorithm}).
+In this section, we will display an example of how the translation algorithm 
+operates, and present a pseudocode form of the algorithm. 
+
+\subsection{A translation example}
 
 \begin{algorithm}[t]
 \begin{algorithmic}
