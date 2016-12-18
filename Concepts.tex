@@ -918,6 +918,8 @@ which we will use an example in Section~\label{translation-algorithm}.
 A set-reset latch (S-R latch) is a particularly simple logic gate, used to store either a zero or one,
 depending on the inputs. 
 
+\vspace{-3mm}
+
 \begin{figure}[h]
 \begin{centering}
 \includegraphics[scale=0.51]{Images/sr-latch-circuit}
@@ -1006,6 +1008,21 @@ can define an SR-latch as follows:
 It's isn't necessary to split a scenario specification up into several concepts. 
 Depending on the size of the specification, it may be simpler and quicker to 
 produce a single concept like this.
+
+Either of these concept specifications can be translated to produce an STG. 
+The translated STG will be as follows:
+
+\vspace{-3mm}
+
+\begin{figure}[h]
+\begin{centering}
+\includegraphics[scale=0.32]{Images/sr-latch-stg}
+\par\end{centering}
+\vspace{-1mm}
+\protect\caption{\label{fig:sr-latch-circuit} An SR-latch STG}
+\vspace{-5mm}
+\end{figure}
+
 
 \subsection{OR-gate}
 
