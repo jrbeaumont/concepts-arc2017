@@ -926,7 +926,7 @@ depending on the inputs.
 \par\end{centering}
 \vspace{-1mm}
 \protect\caption{\label{fig:sr-latch-circuit} The symbol of an SR-latch}
-\vspace{-5mm}
+\vspace{-3mm}
 \end{figure}
 
 \noindent There are two input signals for this gate, $s$ and $r$, and a single output, $q$: 
@@ -974,7 +974,7 @@ blocking the output from going high.
 
 \[
 \begin{array}{lcl}
-\mathsf{initialState}&\hspace{-2mm}=&\hspace{-2mm}\mathsf{initialise0} [a, b, c]
+\mathsf{initialState}&\hspace{-2mm}=&\hspace{-2mm}\mathsf{initialise0} [s, r, q]
 \end{array}
 \]
 
@@ -1001,7 +1001,7 @@ can define an SR-latch as follows:
  \[
 \begin{array}{lcl}
 \mathsf{SRLatch}&\hspace{-2mm}=\mathsf{buffer}(s, q) \diamond\, \mathsf{inverter}(r, q) \diamond\, \mathsf{inputs}[s, r]\\ 
-&\diamond\, \mathsf{outputs}[q] \diamond\, \mathsf{initialise0} [s, r, q].
+&\diamond\, \mathsf{outputs}[q] \diamond\, \mathsf{initialise0} [s, r, q]
 \end{array}
 \]
 
@@ -1010,7 +1010,7 @@ Depending on the size of the specification, it may be simpler and quicker to
 produce a single concept like this.
 
 Either of these concept specifications can be translated to produce an STG. 
-The translated STG will be as follows:
+The translated STG can be found in Figure~\ref{fig:sr-latch-stg}.
 
 \vspace{-3mm}
 
@@ -1019,11 +1019,11 @@ The translated STG will be as follows:
 \includegraphics[scale=0.32]{Images/sr-latch-stg}
 \par\end{centering}
 \vspace{-1mm}
-\protect\caption{\label{fig:sr-latch-circuit} An SR-latch STG}
+\protect\caption{\label{fig:sr-latch-stg} An SR-latch STG}
 \vspace{-5mm}
 \end{figure}
 
-
+\vspace{-5mm}
 \subsection{OR-gate}
 
 The S-R latch features only AND-causality, and as we displayed 
@@ -1032,7 +1032,229 @@ and a Buck controller, which only feature AND-causality, these can be translated
 to an STG. 
 
 OR-causality is quite different however, and causes some significant differences 
-in a resulting STG. 
+in a resulting STG, as we will see with the example of an OR-gate. 
+
+\begin{figure}[h]
+\begin{centering}
+\includegraphics[scale=0.55]{Images/or-gate-circuit}
+\par\end{centering}
+
+\protect\caption{\label{fig:or-gate-circuit} The circuit diagram of an OR-gate}
+\vspace{-3mm}
+\end{figure}
+
+Let's start by specifying the OR-gate. There are three signals, which for this 
+example we will call $a$ and $b$ which are inputs, and $c$ which is the only output:
+
+\begin{itemize}
+  \item $a$ - When either this signal or $b$ is high, the output should be set high.
+  \item $b$ - When either this signal or $a$ is high, the output should be set high.
+  \item $c$ - This output signal is high when at least one of the inputs is high, but low when
+		\emph{both} input signals are low.
+\end{itemize}
+
+As with the S-R latch, we can start by specifying the interface: 
+
+\[
+\begin{array}{lcl}
+\mathsf{interface}&\hspace{-2mm}=&\hspace{-2mm}\mathsf{inputs}[a, b]~\diamond~\mathsf{outputs}[c]
+\end{array}
+\]
+
+Again, there is no information on the initial state. By the description, we can
+assume that setting all signals to be initially low will mean that the output
+will not be able to go high. Thus we can define the initial state as:
+
+\[
+\begin{array}{lcl}
+\mathsf{initialState}&\hspace{-2mm}=&\hspace{-2mm}\mathsf{initialise0} [a, b, c]
+\end{array}
+\]
+
+For the interaction between signals, let's start by specifying the concept which 
+describes what causes the output to go low:
+
+\[
+\begin{array}{lcl}
+\mathsf{outputFall}&\hspace{-2mm}=&\hspace{-2mm}a^{-} \rightsquigarrow c^{-} \diamond\, b^{-} \rightsquigarrow c^{-}
+\end{array}
+\]
+
+In words, this means that both $a^{-}$ and $b^{-}$ must have occured before $c^{-}$ can occur. 
+This is AND-causality as we have used in previous examples. 
+
+For a slightly more compact specification, we can rewrite this concept as:
+
+\[
+\begin{array}{lcl}
+\mathsf{outputFall}&\hspace{-2mm}=&\hspace{-2mm}[a^{-}, b^{-}] \sim\&\sim> c^{-} 
+\end{array}
+\]
+
+The concept specifying the output going high is slightly different, because only one of
+$a$ and $b$ must be high in order for $c$ to go high. This is OR-causality and specifying 
+this in concepts is not too difficult: 
+                                                                                                                                                                                                                                                                                                                                                        
+\[
+\begin{array}{lcl}
+\mathsf{outputRise}&\hspace{-2mm}=&\hspace{-2mm}[a^{+}, b^{+}] \sim|\sim> c^{+} 
+\end{array}
+\]
+
+This lists the possible cause transitions of $c^{+}$, namely $a^{+}$ and $b^{+}$. 
+
+This completes the specification, so let's compose these conepts for the full OR-gate
+specification:
+
+\[
+\begin{array}{lcl}
+\mathsf{orGate}&\hspace{-2mm}=&\hspace{-2mm}\mathsf{outputFall} \diamond\, \mathsf{outputRise} \diamond\, \mathsf{interface} 
+\diamond\, \mathsf{initialState}
+\end{array}
+\]
+
+With the OR-gate it is not possible to use pre-defined concepts, but we do not need to
+specify the individual concepts for a similarly sized specification:
+
+ \[
+\begin{array}{lcl}
+\mathsf{orGate}&\hspace{-2mm}=[a^{-}, b^{-}] \sim\&\sim> c^{-} \diamond\, [a^{+}, b^{+}] \sim|\sim> c^{+} \\
+&\diamond\, \mathsf{inputs}[a, b] \diamond\, \mathsf{outputs}[c] \diamond\, \mathsf{initialise0} [a, b, c]
+\end{array}
+\]
+
+The difficulty with OR-causality comes with translation. The translated STG for an OR-gate
+can be found in Figure~\ref{fig:or-gate-stg}, and features one major difference.
+
+\begin{figure}[h]
+\begin{centering}
+\includegraphics[scale=0.32]{Images/or-gate-stg}
+\par\end{centering}
+\vspace{-1mm}
+\protect\caption{\label{fig:or-gate-stg} An OR-gate STG}
+\vspace{-3mm}
+\end{figure}
+
+This STG features 2 different $c^{+}$ transitions, due to the OR-causality. 
+This is for each possible cause, and it is visible that one is connected via a 
+read-arc to the $a1$ place and the other is connected via a read-arc to 
+the $b1$ place. This allows $c^{+}$ to transition if either $a^{+}$, 
+$b^{+}$ or both of these has occured.
+
+Note that there is still only one $c^{-}$ transition, as this requires both
+$a^{-}$ and $b{-}$ to have transitioned. 
+
+\subsection{AND-gate}
+
+An AND-gate, unlike what the name suggests also features OR-causality. 
+For the output to go high, the input signals are in an AND-causality relationship
+with the output, however, only one of the inputs needs to transition low for the 
+output to go low. 
+
+\vspace{-3mm}
+
+\begin{figure}[h]
+\begin{centering}
+\includegraphics[scale=0.55]{Images/and-gate-circuit}
+\par\end{centering}
+
+\protect\caption{\label{fig:or-gate-circuit} The circuit diagram of an AND-gate}
+\vspace{-3mm}
+\end{figure}
+
+This example also features 3 signals, $a$ and $b$ which are inputs, and $c$
+which is an output:
+
+\begin{itemize}
+  \item $a$ - When this signal and $b$ are high, the output should be set high.
+  \item $b$ - When this signal and $a$ are high, the output should be set high.
+  \item $c$ - This output signal is high when all of the inputs are high, but low when
+		\emph{at least} one of the input signals are low.
+\end{itemize}
+
+Again, we can start with the interface: 
+
+\[
+\begin{array}{lcl}
+\mathsf{interface}&\hspace{-2mm}=&\hspace{-2mm}\mathsf{inputs}[a, b]~\diamond~\mathsf{outputs}[c]
+\end{array}
+\]
+
+With the initial state, we can again assume that setting all signals low initially will mean 
+that no signals are causing any other signal transitions:
+
+\[
+\begin{array}{lcl}
+\mathsf{initialState}&\hspace{-2mm}=&\hspace{-2mm}\mathsf{initialise0} [a, b, c]
+\end{array}
+\]
+
+Now for signal interactions. For the output to go high, both input signals must
+transition high. This concept is: 
+
+\[
+\begin{array}{lcl}
+\mathsf{outputRise}&\hspace{-2mm}=&\hspace{-2mm}a^{+} \rightsquigarrow c^{+} \diamond\, b^{+} \rightsquigarrow c^{+}
+\end{array}
+\]
+
+This concept can also be written as:
+
+\[
+\begin{array}{lcl}
+\mathsf{outputRise}&\hspace{-2mm}=&\hspace{-2mm}[a^{+}, b^{+}] \sim\&\sim> c^{+} 
+\end{array}
+\]
+
+OR-causality is necessary for an AND-gate when specifying the output falling. Either $a^{-}$,
+$b^{-}$ or both must occur before $c^{-}$ can occur. In concepts, we list the possible
+causes for the effect:
+
+\[
+\begin{array}{lcl}
+\mathsf{outputFall}&\hspace{-2mm}=&\hspace{-2mm}[a^{-}, b^{-}] \sim|\sim> c^{-} 
+\end{array}
+\]
+
+We can now compose these for an AND-gate specification. As with the previous examples
+this can be in two forms.
+
+\[
+\begin{array}{lcl}
+\mathsf{andGate}&\hspace{-2mm}=&\hspace{-2mm}\mathsf{outputRise} \diamond\, \mathsf{outputFall} \diamond\, \mathsf{interface} 
+\diamond\, \mathsf{initialState}
+\end{array}
+\]
+
+A compact version can be formed in this way:
+
+ \[
+\begin{array}{lcl}
+\mathsf{andGate}&\hspace{-2mm}=[a^{+}, b^{+}] \sim\&\sim> c^{-} \diamond\, [a^{-}, b^{-}] \sim|\sim> c^{-} \\
+&\diamond\, \mathsf{inputs}[a, b] \diamond\, \mathsf{outputs}[c] \diamond\, \mathsf{initialise0} [a, b, c]
+\end{array}
+\]
+
+This can now be translated, and the resulting STG can be viewed in Figure~\ref{fig:and-gate-stg}
+
+\begin{figure}[h]
+\begin{centering}
+\includegraphics[scale=0.32]{Images/and-gate-stg}
+\par\end{centering}
+\vspace{-1mm}
+\protect\caption{\label{fig:and-gate-stg} An AND-gate STG}
+\vspace{-3mm}
+\end{figure}
+
+This STG is similar to the OR-gate STG~(Figure~\ref{fig:or-gate-stg}), however
+in this image, there are two $c^{-}$ transitions, one of which connects to $a0$
+via a read-arc, the other of which connects to $b0$. This way, either $a^{+}$ 
+, $b^{+}$, or both of these will allow $c^{+}$ to occur. However, both $a$ and
+$b$ transitioning high is necessary for $c$ to transition high. 
+
+We have shown the difference that OR-casuality can make to an STG in this
+section, but not how this affects the translation. In Section~\ref{sec:algorithm} we 
+will discuss the implemented translation algorithm. 
 
 \section{Circuit specification with concepts \label{sec:Circuit-specification-with}}
 
