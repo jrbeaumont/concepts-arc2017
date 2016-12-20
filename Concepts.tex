@@ -1024,7 +1024,7 @@ The translated STG can be found in Figure~\ref{fig:sr-latch-stg}.
 \end{figure}
 
 \vspace{-5mm}
-\subsection{OR-gate}
+\subsection{OR-gate \label{sub:or-gate}}
 
 The S-R latch features only AND-causality, and as we displayed 
 in~\cite{2015_Beaumont_MEMOCODE}, with the examples of a C-element 
@@ -1118,7 +1118,7 @@ specify the individual concepts for a similarly sized specification:
 
  \[
 \begin{array}{lcl}
-\mathsf{orGate}&\hspace{-2mm}=[a^{-}, b^{-}] \sim\&\sim> c^{-} \diamond\, [a^{+}, b^{+}] \sim|\sim> c^{+} \\
+\mathsf{orGate}\,a \,b \,c&\hspace{-2mm}=[a^{-}, b^{-}] \sim\&\sim> c^{-} \diamond\, [a^{+}, b^{+}] \sim|\sim> c^{+} \\
 &\diamond\, \mathsf{inputs}[a, b] \diamond\, \mathsf{outputs}[c] \diamond\, \mathsf{initialise0} [a, b, c]
 \end{array}
 \]
@@ -1512,8 +1512,7 @@ will discuss the implemented translation algorithm.
 
 Concepts are a useful way of specifying asynchronous circuits, but
 specifications also need to be \emph{verified} against certain properties to
-ensure
-their correctness, and once they are deemed to be correct, they need to
+ensure their correctness, and once they are deemed to be correct, they need to
 be \emph{synthesised} into efficient circuit implementations. Many software
 tools exist which automatically verify and synthesise STG specifications,
 such as \noun{Petrify}~\cite{Cortadella} and
@@ -1525,6 +1524,243 @@ In this section, we will display an example of how the translation algorithm
 operates, and present a pseudocode form of the algorithm. 
 
 \subsection{A translation example}
+
+The example we will use for this is that of an OR-gate with control signal. 
+This is similar to the OR-gate as seen in Section~\ref{sub:or-gate}; inputs
+of $a$ and $b$, and an output of $c$. There will however be an extra 
+input signal, $x$. 
+
+This is the control signal, and interacts as follows:
+Only when $x$ is high can the output $c$ transition. This control signals
+allows a circuit to latch the output signal, by setting $x$ high to let
+the output change, and when ready to use this signal, setting $x$ low,
+so regardless of the inputs, it will remain in this state, and not change.
+
+This is a rudimentary example, but is useful in displaying how the algorithm
+handles a system featuring both OR- and AND-causality. The concept for 
+the interaction of the control signal is:
+
+\[
+\begin{array}{lcl}
+\mathsf{control}&\hspace{-2mm}=&\hspace{-2mm}x^{+} \rightsquigarrow c^{+} \diamond x^{+} \rightsquigarrow c^{-} 
+\end{array}
+\]
+
+We know this signal is an input, and let's assume we would like to latch
+the initially low output signal, and we can include this concept in the 
+scenario for this translation:
+
+\[
+\begin{array}{lcl}
+\hspace{-2mm}\mathsf{orGateCtrl}\,  a \, b \, c \, x &\hspace{-2mm}=&\hspace{-2mm}\mathsf{orGate}\, a\, b\, c \diamond\, \mathsf{control}
+\diamond\, \mathsf{inputs}\, [a,\, b,\, x] \\
+&& \diamond \, \mathsf{outputs} \,  [c] \diamond\, \mathsf{initialise0}\, [a,\, b,\, c,\, x]
+\end{array}
+\]
+
+In this concept, we have reused the OR-gate concept, defined in Section~\ref{sub:or-gate}. 
+For reference, the fully translated STG can be found in Figure~\ref{fig:or-gate-ctrl}.
+
+\begin{figure}[h]
+\begin{centering}
+\includegraphics[scale=0.32]{Images/or-gate-ctrl-stg}
+\par\end{centering}
+\vspace{-1mm}
+\protect\caption{\label{fig:and-gate-stg} An AND-gate STG}
+\vspace{-3mm}
+\end{figure}
+
+This STG still contains the two $c^{+}$ transitions, allowing this transition when either 
+$a^{+}$ or $b^{+}$ has occured. However, with the inclusion of $x$, note that both
+of these transitions also require $x^{+}$ to have occured. This is the same for $c^{-}$. 
+Through the addition of the \emph{control} concept, we need to add AND-causality to
+each and every $c^{+}$ and $c^{-}$ transition with $x^{+}$. The combination of signals
+required for each possible transition in both high and low transitions are calculated in the
+algorithm, and we will detail this process in this section.
+
+As displayed in Section~\ref{sec:examples}, there are multiple ways of
+representing a specification using concepts. However, all levels of
+abstraction available to the designer are built out of primitive low-level
+signal concepts. Given a specification, we can therefore
+break down all gate- and protocol-level constructs into `atoms', which
+significantly simplifies the translation task.
+
+For this example, the specification is broken down into these signal-level concepts:
+
+\[
+\begin{array}{lcl}
+\hspace{-2mm}\mathsf{orGateCtrl}\,a,\,b,\,c\,x&\hspace{-2mm}=&\hspace{-2mm}[a^{+}, b^{+}]\sim|\sim>c^{+} 
+\diamond a^{-}\rightsquigarrow c^{-} \diamond b^{-}\rightsquigarrow c^{-}\\
+~&\hspace{-2mm}\diamond&\hspace{-2mm}x^{+}\rightsquigarrow c^{+} \diamond
+x^{+}\rightsquigarrow c^{-} \diamond \mathsf{inputs} \, [a,\,b,\,x] \\
+~&\hspace{-2mm}\diamond&\hspace{-2mm}\mathsf{outputs}\,[c]\diamond\mathsf{initialise0}\,[a,\,b,\,c,\,x]
+\end{array}
+\]
+
+\noindent The first step is to reformat these concepts into lists of causes for effects.
+Each list will be of possible causes for each OR- and AND-causality signal-level
+concept in the specification, meaning that for each OR-causality concept, there will
+be 2 or more signals in the list, and for each AND-causality concept there will be a single
+item list. 
+
+For example, using the concept $x^{+} \rightsquigarrow c^{+}$, for this $c^{+}$ transition,
+there is only one possible cause of it, $x^{+}$. Therefore, this forms a single item list, 
+containing only $x^{+}$.
+
+For another example, taking the concept\\$[a^{+}, b^{+}]\sim|\sim>c^{+}$, there are
+two possible transitions for $c^{+}$ here, $a^{+}$ and $b^{+}$. These therefore form 
+a two item list. 
+
+This will mean there may be several different lists for each cause transition, having this list-of-lists
+will mean we can perform an operation on them in a future step, and acquire both the number of a
+single transition, and the read-arcs which must connect to each of these. 
+
+Table~\ref{tab:list-of-concepts} contains all of the lists described above.
+
+\begin{table}[t]
+\caption{Lists of possible cause transitions for effect transitions\label{tab:list-of-concepts}}
+
+  \centering
+\begin{tabular}[htb]{| m{2.6cm} | m{2.0cm} |}
+  \hline
+Causes & \, Effects \\ \hline \hline
+$x^{+}$ & $c^{+}$ \\ \hline
+$a^{+}$, $b^{+}$ & $c^{+}$ \\ \hline
+
+
+  \end{tabular}
+  \vspace{-3mm}
+\end{table}
+
+
+%\vspace{-3mm}
+%\[
+%\begin{array}{lcl}
+%\hspace{-2mm}\mathsf{circuit}(a,b,c)&\hspace{-2mm}=&\hspace{-2mm}a^{+}\rightsquigarrow
+%c^{+} \diamond b^{+}\rightsquigarrow c^{+} \diamond c^{+}\rightsquigarrow a^{-}
+%\diamond c^{+}
+%\rightsquigarrow b^{-}\\
+%~&\hspace{-2mm}\diamond&\hspace{-2mm}a^{-}\rightsquigarrow c^{-} \diamond
+%b^{-}\rightsquigarrow c^{-} \diamond c^{-}\rightsquigarrow a^{+} \diamond
+%c^{-}\rightsquigarrow b^{+}\\
+%~&\hspace{-2mm}\diamond&\hspace{-2mm}\mathsf{initialise}(a,0) \diamond
+%\mathsf{initialise}(b,0) \diamond \mathsf{initialise}(c,0)\\
+%~&\hspace{-2mm}\diamond&\hspace{-2mm}\mathsf{inputs}(\{a,b\})\diamond\mathsf{outputs}(\{c\})
+%\end{array}
+%\]
+%\vspace{2mm}
+%\noindent One can see that the above list of primitive concepts matches
+%the STG in Figure~\ref{fig:cElement STG composition} very closely, in particularthe causality concepts match the arcs of the STG. Below we describe a general
+%translation algorithm that in particular can produce this STG fully
+%automatically.
+%The algorithm is implemented and integrated in the open-source tool
+%\noun{Workcraft},
+%where it produces STGs in commonly used \textsf{*.g} file format.
+
+%Given a list of primitive concepts, the algorithm starts by creating so-called
+%\emph{consistency loops} for each signal in the specified interface, which
+%forces rising
+%and falling transitions of each signal to alternate, thereby ensuring that the
+%resulting
+%STG satisfies the property of \emph{consistency}~\cite{Cortadella}.
+%The places between the transitions of a signal determine its state.
+%Figure~\ref{fig:step-by-step1} shows consistency loops created for the example.
+%
+%\begin{figure}[h]
+%\begin{centering}
+%\includegraphics[scale=0.23]{Images/Step-by-step1}
+%\par
+%\protect\caption{\label{fig:step-by-step1}The first step: create consistency
+%loops.}
+%\vspace{-2mm}
+%\end{centering}
+%\end{figure}
+%
+%The next step is to connect signal transitions according to the list of
+%causality
+%concepts. In the above example we start with $a^{+}\rightsquigarrow c^{+}$.
+%To represent it in the STG, we connect the place after $a^{+}$ ($a_1$ in
+%Figure~\ref{fig:step-by-step1}) to transition $c^{+}$ by a \emph{read arc},
+%which allows $c^{+}$ to transition without consuming the token (consuming
+%the token would disable $a^{-}$), see Figure~\ref{fig:step-by-step2}.
+%
+%\vspace{-2mm}
+%\begin{figure}[h]
+%\begin{centering}
+%\includegraphics[scale=0.23]{Images/Step-by-step2}
+%\par
+%\protect\caption{\label{fig:step-by-step2}The second step: add causality concept
+%$a^{+}\rightsquigarrow c^{+}$.}
+%\vspace{-2mm}
+%\end{centering}
+%\end{figure}
+%
+%We continue translating the remaining causality concepts in the same manner
+%obtaining the STG shown in Figure~\ref{fig:step-by-step9}.
+%
+%\begin{figure}[h]
+%\begin{centering}
+%\includegraphics[scale=0.23]{Images/Step-by-step9}
+%\par
+%\protect\caption{\label{fig:step-by-step9}Finish the second step: add all
+%causality concepts.}
+%\vspace{-2mm}
+%\par\end{centering}
+%\end{figure}
+%
+%The final step of the translation algorithm is to add tokens to some of the
+%places
+%of the resulting STG according to the initial state concepts
+%$\mathsf{initialise}(a,0) \diamond \mathsf{initialise}(b,0) \diamond
+%\mathsf{initialise}(c,0)$, which declare the initial states of all three signals
+%to be 0. We therefore
+%add tokens to places $a_0$, $b_0$ and $c_0$, producing the fully translated STG
+%in
+%Figure~\ref{fig:step-by-step12}.
+%
+%\begin{figure}[h]
+%\begin{centering}
+%\includegraphics[scale=0.23]{Images/Step-by-step12}
+%\par
+%\protect\caption{\label{fig:step-by-step12}The final step: set the initial
+%state.}
+%\par\end{centering}
+%\vspace{-3mm}
+%\end{figure}
+%
+%The resulting STG and the STG shown above
+%look very different but they are behaviourally equivalent. The latter is much
+%more
+%compact and easier to read though, and it would be preferable to show it to the
+%designer instead of the one obtained by our translation algorithm. Our
+%implementation supports automated \emph{resynthesis} of the resulting STG
+%using \noun{Petrify}, and can therefore seamlessly produce the STG above 
+%from the given specification.
+%
+%%%By integrating concepts into \noun{Workcraft} we allow a designer to
+%%%visualise their concept designs as STGs, to simulate, verify and synthesise
+%%them,
+%%%and if there are any corrections or additions to be made these can be done
+%%either
+%%%directly in the STG or in the original concept specification, which can then
+%%%be re-translated into an updated STG.
+%
+%%%In some cases it may not be necessary to visualize a translated STG. A
+%%\emph{.g} file is used as an input with these tools, without having to import
+%%into \noun{Workcraft}. This can
+%%%further quicken the process of specification using concepts. This also applies
+%%to synthesis, which can be performed using a tool such as \noun{Petrify} or
+%%\noun{Mpsat}.
+%%
+%%%or using \emph{Direct Synthesis}, which is discussed in
+%%\S\ref{sub:direct-synth}.
+%
+%The described translation algorithm is shown in pseudocode
+%in~Algorithm~\ref{alg:translation}.
+
+\vspace{-1mm}
+
+\subsection{Translation algorithm}
 
 \begin{algorithm}[t]
 \begin{algorithmic}
@@ -1554,143 +1790,7 @@ operates, and present a pseudocode form of the algorithm.
 
 \end{algorithmic}
 \end{algorithm}
-%%A method of synthesizing concepts directly also exists, which will be
-%explained,giving more options to designers.
 
-As displayed in Section~\ref{sec:examples}, there are multiple ways of
-representing a specification using concepts. However, all levels of
-abstraction available to the designer are built out of primitive low-level
-signal concepts such as causality. Given a specification, we can therefore
-break down all gate- and protocol-level constructs into `atoms', which
-significantly simplifies the translation task.
-
-
-%\vspace{-3mm}
-%\[
-%\begin{array}{lcl}
-%\hspace{-2mm}\mathsf{circuit}(a,b,c)&\hspace{-2mm}=&\hspace{-2mm}a^{+}\rightsquigarrow
-%c^{+} \diamond b^{+}\rightsquigarrow c^{+} \diamond c^{+}\rightsquigarrow a^{-}
-%\diamond c^{+}
-%\rightsquigarrow b^{-}\\
-%~&\hspace{-2mm}\diamond&\hspace{-2mm}a^{-}\rightsquigarrow c^{-} \diamond
-%b^{-}\rightsquigarrow c^{-} \diamond c^{-}\rightsquigarrow a^{+} \diamond
-%c^{-}\rightsquigarrow b^{+}\\
-%~&\hspace{-2mm}\diamond&\hspace{-2mm}\mathsf{initialise}(a,0) \diamond
-%\mathsf{initialise}(b,0) \diamond \mathsf{initialise}(c,0)\\
-%~&\hspace{-2mm}\diamond&\hspace{-2mm}\mathsf{inputs}(\{a,b\})\diamond\mathsf{outputs}(\{c\})
-%\end{array}
-%\]
-%\vspace{2mm}
-%\noindent One can see that the above list of primitive concepts matches
-%the STG in Figure~\ref{fig:cElement STG composition} very closely, in particularthe causality concepts match the arcs of the STG. Below we describe a general
-%translation algorithm that in particular can produce this STG fully
-%automatically.
-%The algorithm is implemented and integrated in the open-source tool
-%\noun{Workcraft},
-%where it produces STGs in commonly used \textsf{*.g} file format.
-
-Given a list of primitive concepts, the algorithm starts by creating so-called
-\emph{consistency loops} for each signal in the specified interface, which
-forces rising
-and falling transitions of each signal to alternate, thereby ensuring that the
-resulting
-STG satisfies the property of \emph{consistency}~\cite{Cortadella}.
-The places between the transitions of a signal determine its state.
-Figure~\ref{fig:step-by-step1} shows consistency loops created for the example.
-
-\begin{figure}[h]
-\begin{centering}
-\includegraphics[scale=0.23]{Images/Step-by-step1}
-\par
-\protect\caption{\label{fig:step-by-step1}The first step: create consistency
-loops.}
-\vspace{-2mm}
-\end{centering}
-\end{figure}
-
-The next step is to connect signal transitions according to the list of
-causality
-concepts. In the above example we start with $a^{+}\rightsquigarrow c^{+}$.
-To represent it in the STG, we connect the place after $a^{+}$ ($a_1$ in
-Figure~\ref{fig:step-by-step1}) to transition $c^{+}$ by a \emph{read arc},
-which allows $c^{+}$ to transition without consuming the token (consuming
-the token would disable $a^{-}$), see Figure~\ref{fig:step-by-step2}.
-
-\vspace{-2mm}
-\begin{figure}[h]
-\begin{centering}
-\includegraphics[scale=0.23]{Images/Step-by-step2}
-\par
-\protect\caption{\label{fig:step-by-step2}The second step: add causality concept
-$a^{+}\rightsquigarrow c^{+}$.}
-\vspace{-2mm}
-\end{centering}
-\end{figure}
-
-We continue translating the remaining causality concepts in the same manner
-obtaining the STG shown in Figure~\ref{fig:step-by-step9}.
-
-\begin{figure}[h]
-\begin{centering}
-\includegraphics[scale=0.23]{Images/Step-by-step9}
-\par
-\protect\caption{\label{fig:step-by-step9}Finish the second step: add all
-causality concepts.}
-\vspace{-2mm}
-\par\end{centering}
-\end{figure}
-
-The final step of the translation algorithm is to add tokens to some of the
-places
-of the resulting STG according to the initial state concepts
-$\mathsf{initialise}(a,0) \diamond \mathsf{initialise}(b,0) \diamond
-\mathsf{initialise}(c,0)$, which declare the initial states of all three signals
-to be 0. We therefore
-add tokens to places $a_0$, $b_0$ and $c_0$, producing the fully translated STG
-in
-Figure~\ref{fig:step-by-step12}.
-
-\begin{figure}[h]
-\begin{centering}
-\includegraphics[scale=0.23]{Images/Step-by-step12}
-\par
-\protect\caption{\label{fig:step-by-step12}The final step: set the initial
-state.}
-\par\end{centering}
-\vspace{-3mm}
-\end{figure}
-
-The resulting STG and the STG shown above
-look very different but they are behaviourally equivalent. The latter is much
-more
-compact and easier to read though, and it would be preferable to show it to the
-designer instead of the one obtained by our translation algorithm. Our
-implementation supports automated \emph{resynthesis} of the resulting STG
-using \noun{Petrify}, and can therefore seamlessly produce the STG above 
-from the given specification.
-
-%%By integrating concepts into \noun{Workcraft} we allow a designer to
-%%visualise their concept designs as STGs, to simulate, verify and synthesise
-%them,
-%%and if there are any corrections or additions to be made these can be done
-%either
-%%directly in the STG or in the original concept specification, which can then
-%%be re-translated into an updated STG.
-
-%%In some cases it may not be necessary to visualize a translated STG. A
-%\emph{.g} file is used as an input with these tools, without having to import
-%into \noun{Workcraft}. This can
-%%further quicken the process of specification using concepts. This also applies
-%to synthesis, which can be performed using a tool such as \noun{Petrify} or
-%\noun{Mpsat}.
-%
-%%or using \emph{Direct Synthesis}, which is discussed in
-%\S\ref{sub:direct-synth}.
-
-The described translation algorithm is shown in pseudocode
-in~Algorithm~\ref{alg:translation}.
-
-\vspace{-1mm}
 \subsection{Partial translation and parallel composition}
 
 In some cases it may be useful to partially translate concepts to STGs, for
