@@ -26,8 +26,7 @@
 
 \twocolumn
 
-\title{High-level asynchronous concepts at the interface between analogue and
-digital worlds}
+\title{Concepts translation tool}
 \author{Jonathan Beaumont, Andrey Mokhov, Danil Sokolov, Alex Yakovlev\\
 \texttt{\{j.r.beaumont, andrey.mokhov, danil.sokolov,
 alex.yakovlev\}@ncl.ac.uk}\\
@@ -545,7 +544,7 @@ Section~\ref{sec:async-concepts}, and discuss the design flow using the tool wit
 %$\mathsf{initial}_{1}(s)\diamond\mathsf{initial}_{2}(s)\Rightarrow\mathsf{invariant}_{1}(s)\diamond\mathsf{invariant}_{2}(s)$
 %holds too.
 
-%\vspace{-3mm}
+\vspace{-3mm}
 
 \section{Asynchronous Concepts\label{sec:async-concepts}}
 
@@ -633,6 +632,8 @@ to imply behaviours in circuits, for specific requirements of effect transitions
 
 The above notation can cause long-winded specifications when lots of AND-causality is involved. 
 To solve this we have implemented a listing option. The following will acheive the same results:
+
+\vspace{-3mm}
 
 \[
 [a^{+}, b^{+}]\sim\&\sim>c^{+}
@@ -919,6 +920,8 @@ a Set-Reset latch which uses AND-causality, and an OR-gate and an AND-gate, both
 which use both AND- and OR-causality, and this proves to be more difficult to translate,
 which we will use an example in Section~\label{translation-algorithm}.
 
+\vspace{-3mm}
+
 \subsection{Set-reset latch \label{sub:srlatch}}
 
 A set-reset latch (S-R latch) is a particularly simple logic gate, used to store either a zero or one,
@@ -947,6 +950,8 @@ depending on the inputs.
 
 First of all, we know the types of these signals, so let us sepcify the interface concept.
 
+\vspace{-2mm}
+
 \[
 \begin{array}{lcl}
 \mathsf{interface}&\hspace{-2mm}=&\hspace{-2mm}\mathsf{inputs}[s, r]~\diamond~\mathsf{outputs}[q]
@@ -957,6 +962,8 @@ First of all, we know the types of these signals, so let us sepcify the interfac
 When $s$ is high, this causes $q$ to go high. However, only after $s$ goes low can $q$ go low.
 In concepts this is: 
 
+\vspace{-3mm}
+
 \[
 \begin{array}{lcl}
 \mathsf{set}&\hspace{-2mm}=&\hspace{-2mm}s^{+} \rightsquigarrow q^{+} \diamond\, s^{-} \rightsquigarrow q^{-}
@@ -966,6 +973,7 @@ In concepts this is:
 \noindent The interaction between the reset signal and the output will be opposite to this; $r$ going high causes $q$ 
 to go low. Only after $r$ goes low can $q$ go low. The concept for this is:
 
+\vspace{-2mm}
 \[
 \begin{array}{lcl}
 \mathsf{reset}&\hspace{-2mm}=&\hspace{-2mm}r^{+} \rightsquigarrow q^{-} \diamond\, r^{-} \rightsquigarrow q^{+}
@@ -1024,7 +1032,7 @@ The translated STG can be found in Figure~\ref{fig:sr-latch-stg}.
 
 \begin{figure}[h]
 \begin{centering}
-\includegraphics[scale=0.32]{Images/sr-latch-stg}
+\includegraphics[scale=0.25]{Images/sr-latch-stg}
 \par\end{centering}
 \vspace{-1mm}
 \protect\caption{\label{fig:sr-latch-stg} An SR-latch STG}
@@ -1108,6 +1116,7 @@ For a slightly more compact specification, we can rewrite this concept as:
 $a$ and $b$ must be high in order for $c$ to go high. This is OR-causality and specifying 
 this in concepts is not too difficult: 
                                                                                                                                                                                                                                                                                                                                                         
+\vspace{-3mm}
 \[
 \begin{array}{lcl}
 \mathsf{outputRise}&\hspace{-2mm}=&\hspace{-2mm}[a^{+}, b^{+}] \sim|\sim> c^{+} 
@@ -1143,7 +1152,7 @@ can be found in Figure~\ref{fig:or-gate-stg}, and features one major difference.
 \vspace{-3mm}
 \begin{figure}[h]
 \begin{centering}
-\includegraphics[scale=0.32]{Images/or-gate-stg}
+\includegraphics[scale=0.25]{Images/or-gate-stg}
 \par\end{centering}
 \vspace{-1mm}
 \protect\caption{\label{fig:or-gate-stg} An OR-gate STG}
@@ -1258,13 +1267,15 @@ this can be in two forms.
 \\
 \noindent This can now be translated, and the resulting STG can be viewed in Figure~\ref{fig:and-gate-stg}
 
+\vspace{-3mm}
+
 \begin{figure}[h]
 \begin{centering}
-\includegraphics[scale=0.32]{Images/and-gate-stg}
+\includegraphics[scale=0.25]{Images/and-gate-stg}
 \par\end{centering}
 \vspace{-1mm}
 \protect\caption{\label{fig:and-gate-stg} An AND-gate STG}
-\vspace{-3mm}
+\vspace{-2mm}
 \end{figure}
 
 This STG is similar to the OR-gate STG~(Figure~\ref{fig:or-gate-stg}), however
@@ -1528,7 +1539,7 @@ will discuss the implemented translation algorithm.
 %\S~\ref{sub:scenario-composition}
 %\vspace{-1mm}
 
-\vspace{-2mm}
+\vspace{-3mm}
 \section{Concepts to STG translation algorithm\label{sec:algorithm}}
 
 Concepts are a useful way of specifying asynchronous circuits, but
@@ -1542,7 +1553,9 @@ such as \noun{Petrify}~\cite{Cortadella} and
 In order to reuse the tools developed by the community, it is
 necessary to be able to automatically translate concept specifications to STGs.
 In this section, we will display an example of how the translation algorithm 
-operates, and present a pseudocode form of the algorithm. 
+operates, and present a pseudocode form of the algorithm in Algorithm~\ref{alg:translation}. 
+
+\vspace{-3mm}
 
 \subsection{A translation example}
 
@@ -1561,6 +1574,7 @@ This is a rudimentary example, but is useful in displaying how the algorithm
 handles a system featuring both OR- and AND-causality. The concept for 
 the interaction of the control signal is:
 
+\vspace{-4mm}
 \[
 \begin{array}{lcl}
 \mathsf{control}&\hspace{-2mm}=&\hspace{-2mm}x^{+} \rightsquigarrow c^{+} \diamond x^{+} \rightsquigarrow c^{-} 
@@ -1571,6 +1585,7 @@ We know this signal is an input, and let's assume we would like to latch
 the initially low output signal, and we can include this concept in the 
 scenario for this translation:
 
+\vspace{-3mm}
 \[
 \begin{array}{lcl}
 \hspace{-2mm}\mathsf{orGateCtrl}\,  a \, b \, c \, x &\hspace{-2mm}=&\hspace{-2mm}\mathsf{orGate}\, a\, b\, c \diamond\, \mathsf{control}
@@ -1582,9 +1597,11 @@ scenario for this translation:
 In this concept, we have reused the OR-gate concept, defined in Section~\ref{sub:or-gate}. 
 For reference, the fully translated STG can be found in Figure~\ref{fig:or-gate-ctrl}.
 
+\vspace{-3mm}
+
 \begin{figure}[h]
 \begin{centering}
-\includegraphics[scale=0.32]{Images/or-gate-ctrl-stg}
+\includegraphics[scale=0.25]{Images/or-gate-ctrl-stg}
 \par\end{centering}
 \vspace{-1mm}
 \protect\caption{\label{fig:or-gate-ctrl} OR-gate with control signal STG}
@@ -1608,6 +1625,7 @@ significantly simplifies the translation task.
 
 For this example, the specification is broken down into these signal-level concepts:
 
+\vspace{-4mm}
 \[
 \begin{array}{lcl}
 \hspace{-2mm}\mathsf{orGateCtrl}\,a,\,b,\,c\,x&\hspace{-2mm}=&\hspace{-2mm}[a^{+}, b^{+}]\sim|\sim>c^{+} 
@@ -1680,6 +1698,7 @@ provides us with the number of this transition and  whicharcs to connect
 for each transition of each type. 
 For example, using the list of lists for $c^{+}$:
 
+\vspace{-3mm}
 \[
 \begin{array}{lcl}
 ~&[a^{+}, b^{+}]\, [x^{+}] = [a^{+} x^{+}, b^{+} x^{+}]
@@ -1699,13 +1718,14 @@ For $c^{-}$, the result of the cartesian product will be a single item,
 as combining each item in each list will combine all three of the items 
 at once. This will be as follows:
 
+\vspace{-3mm}
 \[
 \begin{array}{lcl}
 ~&[a^{-}], [b^{-}], [x^{-}]  = [a^{-} b^{-} x^{-}]
 \end{array}
 \]
 
-There will therefore be only one $c^{-}$ transition, requiring all three
+\noindent There will therefore be only one $c^{-}$ transition, requiring all three
 of $a^{-}$, $b^{-}$ and $x^{-}$ to have occured before $c^{-}$
 can occur. 
 
@@ -1742,16 +1762,16 @@ show whether a signal has transitioned high or low at any point.
 A token in a $0$ place for example shows that that signal has 
 transitioned low. We add a $0$ and $1$ place for each signal, 
 which for this example gives us $a0$, $a1$, $b0$, $b1$, $x0$, $x1$
-$c0$ and $c1$. Figure~\ref{fig:places} shows the STG form of these.
+$c0$ and $c1$.
 
-\begin{figure}[h]
-\begin{centering}
-\includegraphics[scale=0.32]{Images/or-gate-ctrl-places-stg}
-\par\end{centering}
-\vspace{-1mm}
-\protect\caption{\label{fig:places} Places in an STG during translation}
-\vspace{-3mm}
-\end{figure}
+%\begin{figure}[h]
+%\begin{centering}
+%\includegraphics[scale=0.25]{Images/or-gate-ctrl-places-stg}
+%\par\end{centering}
+%\vspace{-1mm}
+%\protect\caption{\label{fig:places} Places in an STG during translation}
+%\vspace{-3mm}
+%\end{figure}
 
 The interface is defined at the start of the algorithm, by listing them as $inputs$,
 $outputs$ or $internals$, so now we need to include all the transitions, and
@@ -1768,7 +1788,7 @@ that both $c^{+}$ transitions are included in these loops.
 
 \begin{figure}[h]
 \begin{centering}
-\includegraphics[scale=0.32]{Images/or-gate-ctrl-loops-stg}
+\includegraphics[scale=0.25]{Images/or-gate-ctrl-loops-stg}
 \par\end{centering}
 \vspace{-1mm}
 \protect\caption{\label{fig:loops} STG containing only consistency loops}
@@ -1780,9 +1800,11 @@ to be initially 0, meaning that the first transition will be the $+$. From the
 consistency loops, to allow this to happen, we need to place a token in each 
 $0$ place for each signal. This will produce the STG displayed in Figure~\ref{fig:tokens}.
 
+\vspace{-3mm}
+
 \begin{figure}[h]
 \begin{centering}
-\includegraphics[scale=0.32]{Images/or-gate-ctrl-inits-stg}
+\includegraphics[scale=0.25]{Images/or-gate-ctrl-inits-stg}
 \par\end{centering}
 \vspace{-1mm}
 \protect\caption{\label{fig:tokens} STG containing consistency loops and initial states}
@@ -1928,29 +1950,15 @@ be the same as shown in Figure~\ref{fig:or-gate-ctrl}.
 
 \vspace{-1mm}
 
-\subsection{Translation algorithm}
-
-We present the algorithm for the translation of concepts to Signal Transition Graphs in
-Algorithm~\ref{alg:translation}.
-
-
 \begin{algorithm}[t]
 \begin{algorithmic}
 \caption{Algorithm for translating concepts to STGs\label{alg:translation}}
-\For {Signals $s$ in \textbf{Inputs}}
-  \State \textbf{define} interface of $s$ as \emph{Input}
-\EndFor
-\For {Signals $s$ in \textbf{Outputs}}
-  \State \textbf{define} interface of $s$ as \emph{Output}
-\EndFor
-\For {Signals $s$ in \textbf{Internals}}
-  \State \textbf{define} interface of $s$ as \emph{Internal}
+\For {Signal $s$ in \textbf{System}}
+  \State \textbf{define} interface of $s$ as \emph{Input/Output/Internal}
 \EndFor
 
 \For {Each effect transition $e$}
-  \For {Each list of possible causes $l$ for $e$}
-    \State \textbf{add} $l$ to $allCauses$
-  \EndFor
+  \State $allCauses$ $\leftarrow$ Concatinate lists of possible causes for $e$
   \State $transitionList$ $\leftarrow$ \emph{Cartesian Product} \textbf{of} $allCauses$
   \For {$i = 0$ to Length of $transitionList$}
     \State \textbf{add} $e(i)$ to $transitions$
@@ -1960,24 +1968,21 @@ Algorithm~\ref{alg:translation}.
   \State \textbf{add} place \textbf{$s$.Name}$0$
   \State \textbf{add} place \textbf{$s$.Name}$1$
 \EndFor
-
 \For {Each \textbf{transition} $t$ in $transitions$}
   \If {transition is high}
     \State \textbf{connect} (place $t$.signalName$0$, transition)
     \State \textbf{connect} (transition, place $t$.signalName$1$)
+    \For {Each \textbf{cause transition} $c$ for $t$}
+      \State \textbf{read-arc} (place $t$.signalName$1$, $c$)
+    \EndFor
   \EndIf
   \If {transition is low}
     \State \textbf{connect} (place $t$.signalName$1$, transition)
     \State \textbf{connect} (transition, place $t$.signalName$0$)
-  \EndIf
-  \For {Each \textbf{cause transition} $c$ for $t$}
-    \If {transition is high}
-      \State \textbf{read-arc} (place $t$.signalName$1$, $c$)
-    \EndIf
-    \If {transition is low}
+    \For {Each \textbf{cause transition} $c$ for $t$}
       \State \textbf{read-arc} (place $t$.signalName$0$, $c$)
-    \EndIf
-  \EndFor
+    \EndFor
+  \EndIf
 \EndFor
 \For {Each initial state $state$ concept}
   \If {$state$ is low}
@@ -2136,18 +2141,20 @@ Algorithm~\ref{alg:translation}.
 %in comparison to manual combination, could reduce the number of errors
 %as well as design time.
 
+\vspace{-2mm}
+
 \subsection{Interoperability with STG based tools \label{sub:interop-with-stg}}
 
 %\vspace{-5mm}
-\begin{figure*}[t]
-\begin{centering}
-\includegraphics[scale=0.5]{Images/design_flow_wc_screenshot}
-\par\end{centering}
-
-\protect\caption{\label{fig:workcraft_screenshot}Stages of the design flow when
-using asynchronous concepts in \noun{Workcraft}.}
-\vspace{-4mm}
-\end{figure*}
+%\begin{figure*}[h]
+%\begin{centering}
+%\includegraphics[scale=0.3]{Images/design_flow_wc_screenshot}
+%\par\end{centering}
+%
+%\protect\caption{\label{fig:workcraft_screenshot}Stages of the design flow when
+%using asynchronous concepts in \noun{Workcraft}.}
+%\vspace{-4mm}
+%\end{figure*}
 
 The concepts tool, which translates asynchronous concepts to STGs has been
 integrated into open-source toolsuite \noun{Workcraft}~\cite{Workcraft_website}.
@@ -3059,8 +3066,10 @@ can be used directly after translation with these tools.
 %%methodology.
 
 
+\vspace{-3mm}
 
 \section{Conclusions and future work\label{sec:conclusions}}
+
 
 In this work we show that it is possible to design asynchronous control
 circuits at the interface between analogue and digital worlds by
