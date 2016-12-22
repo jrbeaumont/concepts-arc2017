@@ -1,64 +1,65 @@
-\documentclass[british, journal]{IEEEtran}
-\usepackage[T1]{fontenc}
-\usepackage[latin9]{inputenc}
-\usepackage{float}
-\usepackage{amsmath}
-\usepackage{amssymb}
-\usepackage{graphicx}
-\usepackage{setspace}
-\usepackage{array}
-\usepackage{blindtext}
 
-\makeatletter
+%\documentclass[british, journal]{IEEEtran}
+%\usepackage[T1]{fontenc}
+%%\usepackage[latin9]{inputenc}
+%\usepackage{float}
+%\usepackage{amsmath}
+%\usepackage{amssymb}
+%\usepackage{graphicx}
+%\usepackage{setspace}
+%\usepackage{array}
+%\usepackage{blindtext}
 
-\newcommand{\noun}[1]{\textsc{#1}}
+%\makeatletter
 
-\@ifundefined{showcaptionsetup}{}{
- \PassOptionsToPackage{caption=false}{subfig}}
-\usepackage{subfig}
-\makeatother
+%\newcommand{\noun}[1]{\textsc{#1}}
 
-\usepackage{babel}
-\usepackage{algpseudocode}
-\usepackage{algorithm}
+%\@ifundefined{showcaptionsetup}{}{
+% \PassOptionsToPackage{caption=false}{subfig}}
+%\usepackage{subfig}
+%\makeatother
 
-\begin{document}
+%\usepackage{babel}
+%\usepackage{algpseudocode}
+%\usepackage{algorithm}
+
+%\begin{document}
 
 \twocolumn
 
-\title{Automated translation of asynchronous concepts to Signal Transition Graphs}
-\author{Jonathan Beaumont\\
-\texttt{j.r.beaumont@ncl.ac.uk}\\
-\emph{School of Electrical and Electronic Engineering, Newcastle University,
-UK}}
+%\title{Automated translation of asynchronous concepts to Signal Transition Graphs}
+%\author{Jonathan Beaumont\\
+%\texttt{j.r.beaumont@ncl.ac.uk}\\
+%\emph{School of Electrical and Electronic Engineering, Newcastle University,
+%UK}}
+%
+%\maketitle
 
-\maketitle
-
-\begin{abstract}
-Asynchronous circuits are becoming increasingly important in
-system design for Internet-of-Things, where they orchestrate
-the interface between big synchronous computation components
-and the analogue environment, which is inherently asynchronous
-and has high uncertainty with respect to power supply,
-temperature and long-term ageing effects.
-However, wide adoption of asynchronous circuits by industrial users is
-hindered by a steep learning curve for asynchronous control models,
-such as Signal Transition Graphs, that are developed by the academic
-community for specification, verification and synthesis of
-asynchronous circuits.
-
-Previously, we have introduced a novel high-level description language
-for asynchronous circuits, which is based on behavioural
-\textit{concepts} -- high-level descriptions of asynchronous circuit
-requirements, that can be shared, reused and extended by users. 
-In this paper we will discuss more examples using concepts, and an algorithm to
-automatically translate these to Signal Transition Graphs for further processing
-by conventional asynchronous and synchronous EDA tools, such as \noun{Petrify}
-and \noun{Mpsat}. Our aim is to simplify the process of capturing system
-requirements in the form of a formal specification, and to promote behavioural
-concepts as a means for design reuse. The proposed design flow is fully
-automated in open-source toolsuite \noun{Workcraft}.
-\end{abstract}
+%\begin{abstract}
+%Asynchronous circuits are becoming increasingly important in
+%system design for Internet-of-Things, where they orchestrate
+%the interface between big synchronous computation components
+%and the analogue environment, which is inherently asynchronous
+%and has high uncertainty with respect to power supply,
+%temperature and long-term ageing effects.
+%However, wide adoption of asynchronous circuits by industrial users is
+%hindered by a steep learning curve for asynchronous control models,
+%such as Signal Transition Graphs, that are developed by the academic
+%community for specification, verification and synthesis of
+%asynchronous circuits.
+%
+%Previously, we have introduced a novel high-level description language
+%for asynchronous circuits, which is based on behavioural
+%\textit{concepts} -- high-level descriptions of asynchronous circuit
+%requirements, that can be shared, reused and extended by users. 
+%In this paper we will discuss more examples using concepts, and an algorithm to
+%automatically translate these to Signal Transition Graphs for further processing
+%by conventional asynchronous and synchronous EDA tools, such as \noun{Petrify}
+%and \noun{Mpsat}. Our aim is to simplify the process of capturing system
+%requirements in the form of a formal specification, and to promote behavioural
+%concepts as a means for design reuse. The proposed design flow is fully
+%automated in open-source toolsuite \noun{Workcraft}.
+%\end{abstract}
 
 \sloppy
 \thispagestyle{empty}
@@ -1973,7 +1974,7 @@ be the same as shown in Figure~\ref{fig:or-gate-ctrl}.
 
 \vspace{-1mm}
 
-\begin{algorithm}[t]
+\begin{algorithm}[H]
 \begin{algorithmic}
 \caption{Algorithm for translating concepts to STGs\label{alg:translation}}
 \For {Signal $s$ in \textbf{System}}
@@ -3225,4 +3226,4 @@ at~\cite{2016_blog_concepts}.
 \bibliographystyle{unsrt}
 \bibliography{publications}
 
-\end{document}
+%\end{document}
